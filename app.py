@@ -41,8 +41,8 @@ def index():
         """Handle POST requests."""
         data = request.get_json()  # Get JSON data from the request
         badge_number = data.get('badgeNumber')  # Extract the badge number
-        station = data.get('dropdown')
-        if badge_number:
+        station = data.get('station')
+        if badge_number and station:
             airtable_data = {
                 'fields': {
                     'badgeNumber': badge_number,

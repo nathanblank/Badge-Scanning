@@ -51,7 +51,7 @@
         <h2>Flask Airtable Integration</h2>
         <form id="dataForm">
             <input type="text" name="badgeNumber" id="dataField" placeholder="Enter badge number" required>
-            <select id="dropdown">
+            <select id="station" name="station">
                 <option value="DDW7">DDW7</option>
                 <option value="DMD9">DMD9</option>
             </select>
@@ -76,7 +76,7 @@
                 .then(data => {
                     if (data.message === "Success! Record created.") {
                         dataField.value = ''; // Clear the input field
-                        document.getElementById('message').textContent = "Record created successfully!";
+                        document.getElementById('message').textContent = message + " badged in at " document.getElementById('clock').textContent;
                         document.getElementById('message').classList.remove('error');
                         document.getElementById("dataField").value = '';
                     } else {
