@@ -71,14 +71,17 @@
                           dataField.value = ''; // Clear the input field
                           document.getElementById('message').textContent = "Record created successfully!";
                           document.getElementById('message').classList.remove('error');
+                          document.getElementById("dataField").value = '';
                       } else {
                           document.getElementById('message').textContent = data.message;
                           document.getElementById('message').classList.add('error');
+                          document.getElementById("dataField").value = '';
                       }
                   }).catch(error => {
                       console.error('Error:', error);
                       document.getElementById('message').textContent = "An error occurred.";
                       document.getElementById('message').classList.add('error');
+                      document.getElementById("dataField").value = '';
                   });
             }
         });
