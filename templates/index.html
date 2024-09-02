@@ -60,11 +60,11 @@
         <div id="clock" class="clock"></div>
     </div>
     <script>
-        document.getElementById('dataField').addEventListener('input', function() {
-            if (this.value) {
-                var dataField = this;
-                var badgeNumber = dataField.value;
-                var formData = JSON.stringify({ badgeNumber: badgeNumber });
+    document.getElementById('dataField').addEventListener('input', function() {
+        if (this.value) {
+            var dataField = this;
+            var badgeNumber = dataField.value;
+            var formData = JSON.stringify({ badgeNumber: badgeNumber });
 
             fetch('/', {
                 method: 'POST',
@@ -73,25 +73,25 @@
                 },
                 body: formData
             }).then(response => response.json())
-              .then(data => {
-                      if (data.message === "Success! Record created.") {
-                          dataField.value = ''; // Clear the input field
-                          document.getElementById('message').textContent = "Record created successfully!";
-                          document.getElementById('message').classList.remove('error');
-                          document.getElementById("dataField").value = '';
-                      } else {
-                          document.getElementById('message').textContent = data.message;
-                          document.getElementById('message').classList.add('error');
-                          document.getElementById("dataField").value = '';
-                      }
-                  }).catch(error => {
-                      console.error('Error:', error);
-                      document.getElementById('message').textContent = "An error occurred.";
-                      document.getElementById('message').classList.add('error');
-                      document.getElementById("dataField").value = '';
-                  });
+                .then(data => {
+                    if (data.message === "Success! Record created.") {
+                        dataField.value = ''; // Clear the input field
+                        document.getElementById('message').textContent = "Record created successfully!";
+                        document.getElementById('message').classList.remove('error');
+                        document.getElementById("dataField").value = '';
+                    } else {
+                        document.getElementById('message').textContent = data.message;
+                        document.getElementById('message').classList.add('error');
+                        document.getElementById("dataField").value = '';
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('message').textContent = "An error occurred.";
+                    document.getElementById('message').classList.add('error');
+                    document.getElementById("dataField").value = '';
+                });
+            }
         });
-
         function updateClock() {
             var now = new Date();
             var hours = String(now.getHours()).padStart(2, '0');
