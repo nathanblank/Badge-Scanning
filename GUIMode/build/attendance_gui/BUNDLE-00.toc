@@ -1,0 +1,3 @@
+([('attendance_gui',
+   '/Users/N-Dogg/PersonalProjects/Badge-Scanning/GUIMode/dist/attendance_gui',
+   'EXECUTABLE')],)
