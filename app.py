@@ -41,16 +41,17 @@ def index():
         """Handle POST requests."""
         data = request.get_json()  # Get JSON data from the request
         badge_number = data.get('badgeNumber')  # Extract the badge number
-
+        station = data.get('dropdown')
         if badge_number:
             airtable_data = {
                 'fields': {
                     'badgeNumber': badge_number,
+                    'station': station
                 }
             }
             response = post_to_airtable(airtable_data)
-            if response and response.status_code == 201:
-                return jsonify({"message": "Success! Record created."}), 201
+            if response and response.status_code == 200:
+                return jsonify({"message": "Success! Record created."}), 200
             else:
                 return jsonify({"message": "Error: Could not create record."}), 500
         else:
