@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Airtable Integration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            width: 100%;
+        }
+        .message {
+            margin-top: 10px;
+            font-size: 14px;
+            color: green;
+            text-align: center;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form id="dataForm">
+            <input type="text" name="badgeNumber" id="dataField" placeholder="Enter badge number" required>
+        </form>
+        <div id="message" class="message"></div>
+    </div>
+    <script>
+        document.getElementById('dataField').addEventListener('input', function() {
+            if (this.value) {
+                var dataField = this;
+                var badgeNumber = dataField.value;
+                var formData = JSON.stringify({ badgeNumber: badgeNumber });
+
+                fetch('/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: formData
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.message === "Success! Record created.") {
+                          dataField.value = ''; // Clear the input field
+                          document.getElementById('message').textContent = "Record created successfully!";
+                          document.getElementById('message').classList.remove('error');
+                      } else {
+                          document.getElementById('message').textContent = data.message;
+                          document.getElementById('message').classList.add('error');
+                      }
+                  }).catch(error => {
+                      console.error('Error:', error);
+                      document.getElementById('message').textContent = "An error occurred.";
+                      document.getElementById('message').classList.add('error');
+                  });
+            }
+        });
+    </script>
+</body>
+</html>
