@@ -43,24 +43,73 @@
         .error {
             color: red;
         }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+
+        .subtitle {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .input-field {
+            width: 100%; 
+            padding: 1px;
+            border-radius: 1px;
+            border: 1px solid #ccc;
+            margin-bottom: 1px;
+            margin: 0 auto;
+        }
+
+        /* Dropdown menu styling */
+        .dropdown-menu {
+            width: calc(100% - 20px); /* Ensure it doesn't touch the edges */
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Badge Scan Check-in</h1>
-        <h2>Flask Airtable Integration</h2>
+        <!-- <img src="MBBD.jpg" alt="MBBD Logo"> -->
+        <p class = "title">Badge Scan Check-in</p>
+        <h2><div id="clock" class="time-display"></div></h2>
         <form id="dataForm">
-            <input type="text" name="badgeNumber" id="dataField" placeholder="Enter badge number" required>
-            <select id="station" name="station">
+            <select id="station" name="station" class = "dropdown-menu">
                 <option value="DDW7">DDW7</option>
                 <option value="DMD9">DMD9</option>
             </select>
+            <input type="text" name="badgeNumber" id="dataField" placeholder="Enter badge number" class = "input-field" style = "width:90%">
         </form>
         <div id="message" class="message"></div>
-        <div id="clock" class="clock"></div>
+        <!--
+        <br>
+        <form id= "driverName">
+            <h3> If driver does not have badge enter full name here </h3>
+            <input type="text" name="driverNameInput" id="driverNameInput" placeholder="Enter full driver name">
+            <input type="submit" value="Submit">
+        </form>
+        -->
     </div>
     <script>
     document.getElementById('dataField').addEventListener('input', function() {
+        event.preventDefault();
         if (this.value) {
             var dataField = this;
             var badgeNumber = dataField.value;
@@ -77,7 +126,7 @@
                 .then(data => {
                     if (data.message === "Success! Record created.") {
                         dataField.value = ''; // Clear the input field
-                        document.getElementById('message').textContent = badgeNumber + " uploaded successfully at " + document.getElementById('clock').textContent;
+                        document.getElementById('message').textContent = "Badge successfully scanned at " + document.getElementById('clock').textContent;
                         document.getElementById('message').classList.remove('error');
                         document.getElementById("dataField").value = '';
                     } else {
@@ -104,6 +153,42 @@
         setInterval(updateClock, 1000);
         updateClock(); // Initial call to display clock immediately
     </script>
+    
+<!--
+    <script>
+        document.getElementById('driverName').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var dataField = document.getElementById('driverName');
+            var driverName = dataField.value;
+            var formData = JSON.stringify({ EmployeeName: driverName });
+
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.message === "Success! Record created.") {
+                      dataField.value = ''; // Clear the input field
+                      document.getElementById('message').textContent = "Record created successfully!";
+                      document.getElementById('message').classList.remove('error');
+                      document.getElementById("dataField").value = '';
+                  } else {
+                      document.getElementById('message').textContent = data.message;
+                      document.getElementById('message').classList.add('error');
+                      document.getElementById("dataField").value = '';
+                  }
+              }).catch(error => {
+                  console.error('Error:', error);
+                  document.getElementById('message').textContent = "An error occurred.";
+                  document.getElementById('message').classList.add('error');
+                  document.getElementById("dataField").value = '';
+              });
+        });
+    </script> 
+-->
 </body>
 </html>
 
