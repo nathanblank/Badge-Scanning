@@ -64,7 +64,8 @@
         if (this.value) {
             var dataField = this;
             var badgeNumber = dataField.value;
-            var formData = JSON.stringify({ badgeNumber: badgeNumber });
+            var station = document.getElementById("station").value
+            var formData = JSON.stringify({ badgeNumber: badgeNumber, station: station});
 
             fetch('/', {
                 method: 'POST',
@@ -76,7 +77,7 @@
                 .then(data => {
                     if (data.message === "Success! Record created.") {
                         dataField.value = ''; // Clear the input field
-                        document.getElementById('message').textContent = message + " badged in at " document.getElementById('clock').textContent;
+                        document.getElementById('message').textContent = badgeNumber + " uploaded successfully at " + document.getElementById('clock').textContent;
                         document.getElementById('message').classList.remove('error');
                         document.getElementById("dataField").value = '';
                     } else {
