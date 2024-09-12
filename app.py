@@ -54,7 +54,7 @@ def post_to_airtable(data):
 def post_drivers_to_airtable(records):
     """Post data to Airtable and return the response."""
     batch_size = 1
-    for i in range(0, len(records), batch_size):
+    for i in range(0, 2, batch_size):
         batch = records[i:i + batch_size]
         data = {'records': batch}
         response = requests.post(ATTENDANCE_URL, headers=HEADERS, json=data)
