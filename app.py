@@ -25,8 +25,8 @@ SCANS_TABLE_NAME = os.getenv('SCANS_TABLE_NAME')
 
 # Airtable API URLs
 EMPLOYEES_URL = f'https://api.airtable.com/v0/{BASE_ID}/{EMPLOYEES_TABLE_NAME}'
-SCANS_URL = f'https://api.airtable.com/v0/{BASE_ID}/{SCANS_TABLE_NAME}'
-ATTENDANCE_URL = f'https://api.airtable.com/v0/{BASE_ID}/{ATTENDANCE_TABLE_NAME}'
+SCANS_URL = f'https://api.airtable.com/v0/{BASE_ID}/scans'
+ATTENDANCE_URL = f'https://api.airtable.com/v0/{BASE_ID}/Attendance'
 
 HEADERS = {
     'Authorization': f'Bearer {AIRTABLE_API_KEY}',
