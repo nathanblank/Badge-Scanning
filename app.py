@@ -57,6 +57,7 @@ def post_drivers_to_airtable(records):
     for i in range(0, 2, batch_size):
         batch = records[i:i + batch_size]
         data = {'records': batch}
+        print(data)
         response = requests.post(ATTENDANCE_URL, headers=HEADERS, json=data)
         if response.status_code == 200:
             print('Batch uploaded successfully')
