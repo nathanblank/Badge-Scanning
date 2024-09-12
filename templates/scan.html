@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Airtable Integration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            width: 100%;
+        }
+        .message {
+            margin-top: 10px;
+            font-size: 14px;
+            color: green;
+            text-align: center;
+        }
+        .error {
+            color: red;
+        }
+
+        .success{
+            color: green;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+
+        .subtitle {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .input-field {
+            width: 100%; 
+            padding: 1px;
+            border-radius: 1px;
+            border: 1px solid #ccc;
+            margin-bottom: 1px;
+            margin: 0 auto;
+        }
+
+        /* Dropdown menu styling */
+        .dropdown-menu {
+            width: calc(100% - 20px); /* Ensure it doesn't touch the edges */
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- <img src="MBBD.jpg" alt="MBBD Logo"> -->
+        <p class="title">Badge Scan Check-in</p>
+        <h2><div id="clock" class="time-display"></div></h2>
+        
+        <form id="dataForm">
+            <select id="station" name="station" class="dropdown-menu">
+                <option value="DDW7">DDW7</option>
+                <option value="DMD9">DMD9</option>
+            </select>
+            <input type="number" name="badgeNumber" id="dataField" placeholder="Enter badge number" class="input-field" style="width:90%" maxlength="8">
+        </form>
+        
+        <div id="form1message" class="message"></div>
+        
+        <!-- New form for entering driver's name -->
+        <br>
+        <form id="driverForm">
+            <h3>If driver does not have a badge, enter full name here:</h3>
+            <input type="text" name="driverName" id="driverNameInput" placeholder="Enter full driver name" class="input-field" style="width:90%">
+            <input type="submit" value="Submit" class="submit-button">
+        </form>
+        <div id="form2message" class="message"></div>
+
+    </div>    
+    <script>
+        document.getElementById('dataField').addEventListener('input', function() {
+            event.preventDefault();
+            if (this.value) {
+                var dataField = this;
+                var badgeNumber = dataField.value;
+                var time = document.getElementById('clock').textContent
+                if (badgeNumber.length == 8){
+                    var station = document.getElementById("station").value
+                    var formData = JSON.stringify({ badgeNumber: badgeNumber, station: station, inputType: "Scan", submissionTime: time});
+                    fetch('/scan', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: formData
+                    }).then(response => response.json())
+                        .then(data => {
+                            console.log(data.message);
+                            if (data.response == "Success! Record created.") {
+                                dataField.value = ''; // Clear the input field
+                                document.getElementById('form1message').textContent = "Badge successfully scanned at " + document.getElementById('clock').textContent;
+                                document.getElementById('form1message').classList.add('success');
+
+                                document.getElementById('form1message').classList.remove('error');
+                                document.getElementById("dataField").value = '';
+                                document.getElementById('form2message').textContent = "";
+                            } else {
+                                document.getElementById('form1message').textContent = "BLAH BLAH BLAH";
+                                document.getElementById('form1message').classList.add('error');
+                                document.getElementById("dataField").value = '';
+                                document.getElementById('form2message').textContent = "";
+                            }
+                        }).catch(error => {
+                            console.error('Error:', error);
+                            document.getElementById('form1message').textContent = "An error occurred.";
+                            document.getElementById('form1message').classList.add('error');
+                            document.getElementById("dataField").value = '';
+                            document.getElementById('form2message').textContent = "";
+                        });
+                    }
+                }
+            });
+            function updateClock() {
+                var now = new Date();
+                var hours = String(now.getHours()).padStart(2, '0');
+                var minutes = String(now.getMinutes()).padStart(2, '0');
+                var seconds = String(now.getSeconds()).padStart(2, '0');
+                document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+            }
+
+            setInterval(updateClock, 1000);
+            updateClock(); // Initial call to display clock immediately
+    </script>
+    
+    <script>
+        document.getElementById('driverForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var dataField = document.getElementById('driverNameInput');
+            var driverName = dataField.value;
+            var station = document.getElementById("station").value
+            var time = document.getElementById('clock').textContent
+            var formData = JSON.stringify({ EmployeeName: driverName, badgeNumber: "999999999", inputType: "Manual input", station: station, submissionTime: time});
+            fetch('/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.message === "Success! Record created.") {
+                      dataField.value = ''; // Clear the input field
+                      document.getElementById('form2message').textContent = driverName + " successfully entered at " + document.getElementById('clock').textContent;
+                      document.getElementById('form2message').classList.remove('error');
+                      document.getElementById('form1message').textContent = "";
+
+                  } else {
+                      document.getElementById('form2message').textContent = data.message;
+                      document.getElementById('form2message').classList.add('error');
+                      document.getElementById('form1message').textContent = "";
+                      
+                  }
+              }).catch(error => {
+                  console.error('Error:', error);
+                  document.getElementById('form2message').textContent = "An error occurred.";
+                  document.getElementById('form2message').classList.add('error');
+                  document.getElementById('form1message').textContent = "";
+                  
+              });
+        });
+        function updateClock() {
+            var now = new Date();
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial call to display clock immediately
+    </script> 
+</body>
+</html>
+
+

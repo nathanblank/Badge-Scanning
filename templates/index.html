@@ -3,193 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask Airtable Integration</title>
+    <title>Home Page</title>
     <style>
+        .upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center items horizontally */
+            justify-content: center; /* Center items vertically (if needed) */
+        }
+        
+        .upload-container input[type="file"] {
+            margin: 10px 0; /* Adds spacing around the file input */
+            width: 100%; /* Optional: makes the file input full width, adjust as needed */
+            max-width: 300px; /* Optional: limits the width of the file input */
+        }
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            margin: 0;
+            min-height: 100vh;
+            text-align: center;
         }
+
         .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
             width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .upload-container {
+            margin-bottom: 20px;
+        }
+
         form {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-        input[type="text"] {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
+
+        input[type="file"], select, input[type="submit"] {
             width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 16px;
         }
+
+        input[type="file"] {
+            padding: 0;
+            border: none;
+        }
+
+        input[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
         .message {
             margin-top: 10px;
-            font-size: 14px;
-            color: green;
-            text-align: center;
+            font-size: 16px;
         }
-        .error {
+
+        .message.error {
             color: red;
         }
 
-        .title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-
-        .subtitle {
-            font-size: 18px;
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        .time-display {
-            font-family: 'Courier New', monospace;
-            background-color: #f0f0f0;
-            padding: 4px 8px;
+        #myProgress {
+            width: 100%;
+            background-color: #ddd;
+            height: 20px;
             border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        #myBar {
+            height: 100%;
+            background-color: #28a745;
+            text-align: center;
+            color: #fff;
+            line-height: 20px;
+            width: 0%;
+        }
+
+        .button-container {
+            margin-top: 20px;
+        }
+
+        .button-container a {
             display: inline-block;
-            margin-bottom: 20px;
-        }
-        .input-field {
-            width: 100%; 
-            padding: 1px;
-            border-radius: 1px;
-            border: 1px solid #ccc;
-            margin-bottom: 1px;
-            margin: 0 auto;
-        }
-
-        /* Dropdown menu styling */
-        .dropdown-menu {
-            width: calc(100% - 20px); /* Ensure it doesn't touch the edges */
-            padding: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #28a745;
+            text-decoration: none;
             border-radius: 4px;
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
         }
 
+        .button-container a:hover {
+            background-color: #218838;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 10px;
+                width: 100%;
+            }
+
+            input[type="submit"], input[type="file"], select {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- <img src="MBBD.jpg" alt="MBBD Logo"> -->
-        <p class = "title">Badge Scan Check-in</p>
-        <h2><div id="clock" class="time-display"></div></h2>
-        <form id="dataForm">
-            <select id="station" name="station" class = "dropdown-menu">
-                <option value="DDW7">DDW7</option>
-                <option value="DMD9">DMD9</option>
-            </select>
-            <input type="text" name="badgeNumber" id="dataField" placeholder="Enter badge number" class = "input-field" style = "width:90%">
-        </form>
-        <div id="message" class="message"></div>
-        <!--
-        <br>
-        <form id= "driverName">
-            <h3> If driver does not have badge enter full name here </h3>
-            <input type="text" name="driverNameInput" id="driverNameInput" placeholder="Enter full driver name">
-            <input type="submit" value="Submit">
-        </form>
-        -->
+        <h1>Welcome to the File Upload and Scan Page</h1>
+        
+        <div class="upload-container">
+            <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
+                <input type="file" id="fileInput" name="file" accept=".csv" required>
+                <select id="station" name="station" class="dropdown-menu">
+                    <option value="DDW7">DDW7</option>
+                    <option value="DMD9">DMD9</option>
+                </select>
+                <input type="submit" value="Upload">
+            </form>
+            <div id="uploadformmessage" class="message"></div>
+        </div>
+        
+        <div class="button-container">
+            <a href="/scan">Go to Scan Page</a>
+        </div>
     </div>
     <script>
-    document.getElementById('dataField').addEventListener('input', function() {
-        event.preventDefault();
-        if (this.value) {
-            var dataField = this;
-            var badgeNumber = dataField.value;
-            var station = document.getElementById("station").value
-            var formData = JSON.stringify({ badgeNumber: badgeNumber, station: station});
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            document.getElementById('uploadformmessage').textContent = "Please wait approximately 10 seconds for data to upload.";
 
-            fetch('/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: formData
-            }).then(response => response.json())
-                .then(data => {
-                    if (data.message === "Success! Record created.") {
-                        dataField.value = ''; // Clear the input field
-                        document.getElementById('message').textContent = "Badge successfully scanned at " + document.getElementById('clock').textContent;
-                        document.getElementById('message').classList.remove('error');
-                        document.getElementById("dataField").value = '';
-                    } else {
-                        document.getElementById('message').textContent = data.message;
-                        document.getElementById('message').classList.add('error');
-                        document.getElementById("dataField").value = '';
-                    }
-                }).catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('message').textContent = "An error occurred.";
-                    document.getElementById('message').classList.add('error');
-                    document.getElementById("dataField").value = '';
+            event.preventDefault();  // Prevent the default form submission
+            
+            const formData = new FormData(this);  // Create FormData object from the form
+
+            try {
+                const response = await fetch('/', {
+                    method: 'POST',
+                    body: formData // FormData object should be sent without setting 'Content-Type'
                 });
+
+                if (response.ok) { // Check if status code is 200-299
+                    const data = await response.json(); // Parse JSON only if the response is OK
+
+                    // Update UI based on the response data
+                    if (data.response === "Success! Record created.") {
+                        document.getElementById('uploadformmessage').textContent = data['rows'] + " drivers successfully uploaded";
+                        document.getElementById('uploadformmessage').classList.remove('error');
+                    } else {
+                        document.getElementById('uploadformmessage').textContent = "An error occurred.";
+                        document.getElementById('uploadformmessage').classList.add('error');
+                    }
+                } else {
+                    // Handle non-OK responses
+                    document.getElementById('uploadformmessage').textContent = "An error occurred.";
+                    document.getElementById('uploadformmessage').classList.add('error');
+                    throw new Error('Network response was not ok');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('uploadformmessage').textContent = 'Failed to upload data.';
+                document.getElementById('uploadformmessage').classList.add('error');
             }
         });
-        function updateClock() {
-            var now = new Date();
-            var hours = String(now.getHours()).padStart(2, '0');
-            var minutes = String(now.getMinutes()).padStart(2, '0');
-            var seconds = String(now.getSeconds()).padStart(2, '0');
-            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
-        }
-
-        setInterval(updateClock, 1000);
-        updateClock(); // Initial call to display clock immediately
     </script>
-    
-<!--
-    <script>
-        document.getElementById('driverName').addEventListener('submit', function(event) {
-            event.preventDefault();
-            var dataField = document.getElementById('driverName');
-            var driverName = dataField.value;
-            var formData = JSON.stringify({ EmployeeName: driverName });
-
-            fetch('/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: formData
-            }).then(response => response.json())
-              .then(data => {
-                  if (data.message === "Success! Record created.") {
-                      dataField.value = ''; // Clear the input field
-                      document.getElementById('message').textContent = "Record created successfully!";
-                      document.getElementById('message').classList.remove('error');
-                      document.getElementById("dataField").value = '';
-                  } else {
-                      document.getElementById('message').textContent = data.message;
-                      document.getElementById('message').classList.add('error');
-                      document.getElementById("dataField").value = '';
-                  }
-              }).catch(error => {
-                  console.error('Error:', error);
-                  document.getElementById('message').textContent = "An error occurred.";
-                  document.getElementById('message').classList.add('error');
-                  document.getElementById("dataField").value = '';
-              });
-        });
-    </script> 
--->
 </body>
 </html>
-
-
