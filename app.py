@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import csv
 import io
 import pandas as pd
-from thefuzz import process
+from thefuzz import process, fuzz
 import json
 from datetime import datetime
 
@@ -38,7 +38,7 @@ employeesWorkingToday = []
 employeesAndRecordID = {}
 currDate = datetime.now()
 progress = {'completed_rows': 0, 'total_rows': 0}
-
+employeesWorkingTodayAndRecordID = {}
 def post_to_airtable(data):
     """Post data to Airtable and return the response."""
     try:
@@ -166,7 +166,9 @@ def scan():
     global employeesAndRecordID
     global currDate
     unknownEmployee = False
+    global employeesWorkingTodayAndRecordID
     if request.method == 'GET':
+        employeesWorkingTodayAndRecordID = {}
         count = 0
         employeesClean = {}
         params = {}
@@ -187,6 +189,8 @@ def scan():
                 employeesClean[badgeNumber] = record['fields']['Name']
         badgeNumbers = list(employeesClean.keys()) ##TODO FIX BADGENUMBERS
         
+        continueCheck = True
+        params = {}
         while (continueCheck == True):
             response = requests.get(EMPLOYEES_URL, headers=HEADERS, params = params)
             data = response.json()
@@ -196,9 +200,28 @@ def scan():
                 continueCheck = False
         
             for record in data['records']:
-                employeesWorkingToday.append(record['fields']['Name'])
                 employeesAndRecordID[record['fields']['Name']] = record['id']
-            
+        
+        continueCheck = True
+        params = {}
+        while (continueCheck == True):
+            # Construct the filter formula
+
+            filter_formula = f"IS_SAME({'Date'}, TODAY(), 'day')"
+            params = {
+                "filterByFormula": filter_formula
+            }
+
+            response = requests.get(ATTENDANCE_URL, headers=HEADERS, params=params)
+            data = response.json()
+            try:
+                params['offset'] = data['offset']
+            except:
+                continueCheck = False
+        
+            for record in data['records']:
+                employeesWorkingToday.append(record['fields']['Name'])
+                employeesWorkingTodayAndRecordID[record['fields']['Name']] = record['id']
     elif request.method == 'POST':
         """Handle POST requests."""
         data = request.get_json() 
@@ -208,12 +231,12 @@ def scan():
         if(int(badge_number) < 50000000): #check if we have the real badge number
             if badge_number in badgeNumbers: # if that badge number exists
                 employeeName = employeesClean[badge_number]
-                employeeName = process.extractOne(employeeName, employeesWorkingToday)[0]
+                employeeName = process.extractOne(employeeName, employeesWorkingToday, scorer=fuzz.token_sort_ratio)[0]
             else:
                 employeeName = "UNKNOWN EMPLOYEE"
                 unknownEmployee = True
         else:
-            employeeName = process.extractOne(employeeName, employeesWorkingToday)[0]
+            employeeName = process.extractOne(employeeName, employeesWorkingToday, scorer=fuzz.token_sort_ratio)[0]
         
         #Updating attendance
         if (unknownEmployee == False):
@@ -223,7 +246,9 @@ def scan():
                     "Status": "Present"
                 }
             }
-            attendancePostingURL = ATTENDANCE_URL + "/" + employeesAndRecordID[employeeName]
+            # sendableName = process.extractOne(employeeName, employeesAndRecordID.keys(), scorer=fuzz.token_sort_ratio)[0]
+            employeesWorkingTodayAndRecordID = {k: employeesWorkingTodayAndRecordID[k] for k in sorted(employeesWorkingTodayAndRecordID)}
+            attendancePostingURL = ATTENDANCE_URL + "/" + employeesWorkingTodayAndRecordID[employeeName]
             response = requests.patch(attendancePostingURL, headers=HEADERS, data=json.dumps(updatingData))
             if response.status_code == 200:
                 updated_record = response.json()
@@ -251,7 +276,7 @@ def scan():
                 if unknownEmployee:
                     return jsonify({"message": "UNKNOWN EMPLOYEE"}), 202
                 else:
-                    return jsonify({"message": "Success! Record created."}), 200
+                    return jsonify({"message": "Success! Record created.", 'employee': employeeName}), 200
 
             else:
                 return jsonify({"message": "Error: Could not create record."}), 507

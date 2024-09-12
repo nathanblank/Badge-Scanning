@@ -11,82 +11,108 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f0f0;
+            background-color: #f5f5f5;
             margin: 0;
+            color: #333;
         }
         .container {
-            background-color: #fff;
+            background-color: #ffffff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
             width: 100%;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 26px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #555;
         }
         form {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
         }
-        input[type="text"] {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+        input[type="text"],
+        input[type="number"],
+        .dropdown-menu {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
             font-size: 16px;
             width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        .dropdown-menu:focus {
+            border-color: #007bff;
+            outline: none;
         }
         .message {
-            margin-top: 10px;
             font-size: 14px;
-            color: green;
             text-align: center;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
         }
         .error {
-            color: red;
+            color: #e74c3c;
+            background-color: #fbe9e7;
         }
-
-        .success{
-            color: green;
+        .success {
+            color: #2ecc71;
+            background-color: #e9fbe7;
         }
-
+        .input-field {
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            width: 100%;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .submit-button {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: #28a745;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .submit-button:hover {
+            background-color: #218838;
+        }
         .title {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
-
-
         .subtitle {
             font-size: 18px;
-            color: #555;
-            margin-bottom: 20px;
+            color: black;
+            margin-bottom: 5px;
         }
-
         .time-display {
             font-family: 'Courier New', monospace;
-            background-color: #f0f0f0;
-            padding: 4px 8px;
+            background-color: #fafafa;
+            padding: 5px 10px;
             border-radius: 4px;
             display: inline-block;
             margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+            font-size: 20px;
         }
-        .input-field {
-            width: 100%; 
-            padding: 1px;
-            border-radius: 1px;
-            border: 1px solid #ccc;
-            margin-bottom: 1px;
-            margin: 0 auto;
-        }
-
-        /* Dropdown menu styling */
-        .dropdown-menu {
-            width: calc(100% - 20px); /* Ensure it doesn't touch the edges */
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-        }
-
     </style>
 </head>
 <body>
@@ -96,11 +122,11 @@
         <h2><div id="clock" class="time-display"></div></h2>
         
         <form id="dataForm">
-            <select id="station" name="station" class="dropdown-menu">
+            <select id="station" name="station" class="input-field">
                 <option value="DDW7">DDW7</option>
                 <option value="DMD9">DMD9</option>
             </select>
-            <input type="number" name="badgeNumber" id="dataField" placeholder="Enter badge number" class="input-field" style="width:90%" maxlength="8">
+            <input type="number" name="badgeNumber" id="dataField" placeholder="Enter badge number" class="input-field" maxlength="8">
         </form>
         
         <div id="form1message" class="message"></div>
@@ -108,8 +134,8 @@
         <!-- New form for entering driver's name -->
         <br>
         <form id="driverForm">
-            <h3>If driver does not have a badge, enter full name here:</h3>
-            <input type="text" name="driverName" id="driverNameInput" placeholder="Enter full driver name" class="input-field" style="width:90%">
+            <p class="subtitle">If driver does not have a badge, enter full name here:</p>
+            <input type="text" name="driverName" id="driverNameInput" placeholder="Enter full driver name" class="input-field">
             <input type="submit" value="Submit" class="submit-button">
         </form>
         <div id="form2message" class="message"></div>
@@ -133,10 +159,10 @@
                         body: formData
                     }).then(response => response.json())
                         .then(data => {
-                            console.log(data.message);
-                            if (data.response == "Success! Record created.") {
+                            console.log(data);
+                            if (data.message == "Success! Record created.") {
                                 dataField.value = ''; // Clear the input field
-                                document.getElementById('form1message').textContent = "Badge successfully scanned at " + document.getElementById('clock').textContent;
+                                document.getElementById('form1message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
                                 document.getElementById('form1message').classList.add('success');
 
                                 document.getElementById('form1message').classList.remove('error');
@@ -186,9 +212,10 @@
                 body: formData
             }).then(response => response.json())
               .then(data => {
-                  if (data.message === "Success! Record created.") {
+                console.log(data.message);
+                  if (data.message == "Success! Record created.") {
                       dataField.value = ''; // Clear the input field
-                      document.getElementById('form2message').textContent = driverName + " successfully entered at " + document.getElementById('clock').textContent;
+                      document.getElementById('form2message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
                       document.getElementById('form2message').classList.remove('error');
                       document.getElementById('form1message').textContent = "";
 
