@@ -150,11 +150,70 @@ def index():
     return render_template('index.html', message=None)
 
 
+def updateAllEmployeesAndRecordID():
+    global employeesAndRecordID
+    employeesAndRecordID = {}
+    params = {}
+    continueCheck = True
+    while (continueCheck == True):
+        response = requests.get(EMPLOYEES_URL, headers=HEADERS, params = params)
+        data = response.json()
+        try:
+            params['offset'] = data['offset']
+        except:
+            continueCheck = False
+        for record in data['records']:
+            employeesAndRecordID[record['fields']['Name']] = record['id']
 
 
-
-
-
+@app.route('/api/drivers', methods=['GET'])
+def get_drivers():
+    employeesForDropDown = []
+    newEmployeesToday = []
+    allEmployeesNoBarcodes = []
+    station = request.args.get('station')
+    continueCheck = True
+    filter_formula = f"AND(AND(IS_SAME({'Date'}, TODAY(), 'day'), {'Station'}='{station}'), {'Status'} = 'Not Present')"
+    params = {
+        "filterByFormula": filter_formula,
+    }
+    while (continueCheck == True):
+        # Construct the filter formula
+        response = requests.get(ATTENDANCE_URL, headers=HEADERS, params=params)
+        data = response.json()
+        try:
+            params['offset'] = data['offset']
+        except:
+            continueCheck = False
+    
+        for record in data['records']:
+            employeesForDropDown.append(record['fields']['Name'])
+            employeesWorkingTodayAndRecordID[record['fields']['Name']] = record['id']
+    
+    employeesForDropDown.sort()
+    
+    filter_formula = f"LEN({'badgeNumber'}) != 8"
+    params = {
+        "filterByFormula": filter_formula,
+    }
+    continueCheck = True
+    while (continueCheck == True):
+        # Construct the filter formula
+        print(EMPLOYEES_URL)
+        response = requests.get(EMPLOYEES_URL, headers=HEADERS, params=params)
+        data = response.json()
+        try:
+            params['offset'] = data['offset']
+        except:
+            continueCheck = False
+    
+        for record in data['records']:
+            allEmployeesNoBarcodes.append(record['fields']['Name'])
+    
+    allEmployeesNoBarcodes.sort()
+    newEmployeesToday = [item for item in employeesForDropDown if item in allEmployeesNoBarcodes]
+    newEmployeesToday.sort()
+    return jsonify(drivers=employeesForDropDown, newDrivers = newEmployeesToday)
 
 
 
@@ -203,42 +262,28 @@ def scan():
             for record in data['records']:
                 employeesAndRecordID[record['fields']['Name']] = record['id']
         
-        continueCheck = True
-        params = {}
-        while (continueCheck == True):
-            # Construct the filter formula
-
-            filter_formula = f"IS_SAME({'Date'}, TODAY(), 'day')"
-            params = {
-                "filterByFormula": filter_formula
-            }
-
-            response = requests.get(ATTENDANCE_URL, headers=HEADERS, params=params)
-            data = response.json()
-            try:
-                params['offset'] = data['offset']
-            except:
-                continueCheck = False
         
-            for record in data['records']:
-                employeesWorkingToday.append(record['fields']['Name'])
-                employeesWorkingTodayAndRecordID[record['fields']['Name']] = record['id']
+            
     elif request.method == 'POST':
         """Handle POST requests."""
         data = request.get_json() 
         print(data)
         badge_number = data.get('badgeNumber')  
         employeeName = data.get('EmployeeName', '')
-        if(int(badge_number) < 50000000): #check if we have the real badge number
+        if badge_number != "99999999":
             if badge_number in badgeNumbers: # if that badge number exists
                 employeeName = employeesClean[badge_number]
-                employeeName = process.extractOne(employeeName, employeesWorkingToday, scorer=fuzz.token_sort_ratio)[0]
             else:
-                employeeName = "UNKNOWN EMPLOYEE"
-                unknownEmployee = True
-        else:
-            employeeName = process.extractOne(employeeName, employeesWorkingToday, scorer=fuzz.token_sort_ratio)[0]
-        
+                updatingData = {
+                    "fields": {
+                        "Name": employeeName,
+                        "badgeNumber": badge_number
+                    }
+                }
+                updateAllEmployeesAndRecordID()
+                updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
+                response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
+                
         #Updating attendance
         if (unknownEmployee == False):
             updatingData = {
@@ -247,7 +292,6 @@ def scan():
                     "Status": "Present"
                 }
             }
-            # sendableName = process.extractOne(employeeName, employeesAndRecordID.keys(), scorer=fuzz.token_sort_ratio)[0]
             employeesWorkingTodayAndRecordID = {k: employeesWorkingTodayAndRecordID[k] for k in sorted(employeesWorkingTodayAndRecordID)}
             attendancePostingURL = ATTENDANCE_URL + "/" + employeesWorkingTodayAndRecordID[employeeName]
             response = requests.patch(attendancePostingURL, headers=HEADERS, data=json.dumps(updatingData))
@@ -284,7 +328,7 @@ def scan():
         else:
             return jsonify({"message": "Error: Badge number is required."}), 400
 
-    return render_template('scan.html', message=None)
+    return render_template('scan.html', message=None, drivers_working_today = employeesWorkingToday)
 
 
 if __name__ == '__main__':      
