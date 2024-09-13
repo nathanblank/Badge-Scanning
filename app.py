@@ -110,6 +110,7 @@ def index():
                 
                 #loop through each full name and upload to airtable with status "Not Present"
                 df = df.sort_values(by=['Full Name'])
+                currDate = datetime.now()
                 formatted_date = currDate.strftime("%m/%d/%Y")
                 airtable_data = []
                 for index, row in df.iterrows():
