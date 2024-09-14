@@ -59,7 +59,7 @@ def post_drivers_to_airtable(records):
         data = {'records': batch}
         # data = records[i]
         print(data)
-        print(ATTENDANCE_URL)
+        # print(ATTENDANCE_URL)
         response = requests.post(ATTENDANCE_URL, headers=HEADERS, json=data)
         print(response)
         if response.status_code == 200:
@@ -173,7 +173,11 @@ def get_drivers():
     allEmployeesNoBarcodes = []
     station = request.args.get('station')
     continueCheck = True
-    filter_formula = f"AND(AND(IS_SAME({'Date'}, TODAY(), 'day'), {'Station'}='{station}'), {'Status'} = 'Not Present')"
+    currDate = datetime.now()
+    formatted_date = currDate.strftime('%-m/%-d/%Y')
+    # print(formatted_date)
+    filter_formula = f"AND(AND(IS_SAME({'Date'},'{formatted_date}'), {'Station'} = '{station}'), {'Status'} = 'Not Present')"
+    # filter_formula = "IS_SAME(Date,'9/13/2024')"
     params = {
         "filterByFormula": filter_formula,
     }
@@ -199,7 +203,7 @@ def get_drivers():
     continueCheck = True
     while (continueCheck == True):
         # Construct the filter formula
-        print(EMPLOYEES_URL)
+        # print(EMPLOYEES_URL)
         response = requests.get(EMPLOYEES_URL, headers=HEADERS, params=params)
         data = response.json()
         try:
