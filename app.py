@@ -290,6 +290,15 @@ def scan():
                 
         #Updating attendance
         if (unknownEmployee == False):
+            #TODO: IMPLEMENT LATE FEATURE
+            # if (station == "DDW7" and currTime > "9:15") or (station == "DMD9" and currTime > 9:30):
+            # updatingData = {
+            #     "fields": {
+            #         "Name": employeeName,
+            #         "Status": "Late"
+            #     }
+            # }
+            # else:
             updatingData = {
                 "fields": {
                     "Name": employeeName,
