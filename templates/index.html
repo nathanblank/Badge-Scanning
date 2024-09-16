@@ -149,6 +149,12 @@
                 font-size: 14px;
             }
         }
+        button {
+            font-size: 20px; /* Increases the text size */
+            padding: 15px 30px; /* Adds padding to make the button larger */
+            border-radius: 5px; /* Optional: Adds rounded corners */
+        }
+        
     </style>
 </head>
 <body>
@@ -157,6 +163,7 @@
         
         <div class="upload-container">
             <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
+                <h3>Please export and upload the daily roster from Hera</h3>
                 <input type="file" id="fileInput" name="file" accept=".csv" required>
                 <select id="station" name="station" class="dropdown-menu">
                     <option value="DDW7">DDW7</option>
@@ -167,11 +174,19 @@
             <div id="uploadformmessage" class="message"></div>
         </div>
         
+        <br>
+        <h3>Already uploaded the file for today?</h3>
         <div class="button-container">
-            <a href="/scan">Go to Scan Page</a>
+            <button onclick="navigateToStation('DDW7')">DDW7</button>
+            <button onclick="navigateToStation('DMD9')">DMD9</button>
         </div>
     </div>
     <script>
+        
+        function navigateToStation(station) {
+            window.location.href = `/scan?station=${station}`;
+        }
+
         document.getElementById('uploadForm').addEventListener('submit', async function(event) {
             document.getElementById('uploadformmessage').textContent = "Please wait approximately 10 seconds for data to upload.";
 
