@@ -94,18 +94,15 @@
         }
     </style>
 </head>
-<body>
+<body onload="updateIframe()">
     <div class="flex vstack">
         <div class="container">
             <!-- <img src="MBBD.jpg" alt="MBBD Logo"> -->
-            <p class="title">Attendance Check-in</p>
+            <p class="title"><span id="station"></span> Attendance Check-in</p>
             <div id="clock" class="time-display"></div>
             
             <form id="dataForm">
-                <select id="station" name="station" class="input-field">
-                    <option value="DDW7">DDW7</option>
-                    <option value="DMD9">DMD9</option>
-                </select>
+                <h2>Scan employee badge below. Click on the text field to ensure scanner is entering data correctly.</h2>
                 <input type="number" name="badgeNumber" id="dataField" placeholder="Enter badge number" class="input-field" minlength = "8" maxlength="8">
             </form>
             
@@ -114,7 +111,7 @@
             <!-- New form for entering driver's name -->
             <br>
             <form id="driverForm">
-                <p class="subtitle">If driver does not have a badge, select their name here:</p>
+                <p class="subtitle">If driver does not have their badge, select their name here:</p>
                 <select name="driverName" id="driverNameDropdown" class="input-field">
                     {% for d in drivers %}
                         <option value="{{d}}">{{d}}</option>
@@ -125,7 +122,7 @@
             <div id="form2message" class="message"></div>
         </div>
         <br>  
-        <iframe class="airtable-embed" src="https://airtable.com/embed/appeACdHweImPB2eo/shr7UxlKS1mf5o70d" frameborder="0" id = "iFrame"></iframe>
+        <iframe class="airtable-embed" frameborder="0" id = "iFrame"></iframe>
         <div class="container">
             <h2>Add driver's badges that do not already have their badge in the system</h2>
             <form id="addBadgeForm">
@@ -142,30 +139,43 @@
         </div>
     </div>   
     <script>
-        document.getElementById('station').addEventListener('change', function() {
-            var selectedStation = this.value;
-            fetch(`/api/drivers?station=${selectedStation}`)
-                .then(response => response.json())
-                .then(data => {
-                    var dropdown = document.getElementById('driverNameDropdown');
-                    dropdown.innerHTML = ''; // Clear existing options
-                    data.drivers.forEach(driver => {
-                        var option = document.createElement('option');
-                        option.value = driver;
-                        option.textContent = driver;
-                        dropdown.appendChild(option);
-                    });
-                    var dropdown = document.getElementById('addDriverDropdown');
-                    dropdown.innerHTML = ''; // Clear existing options
-                    data.newDrivers.forEach(driver => {
-                        var option = document.createElement('option');
-                        option.value = driver;
-                        option.textContent = driver;
-                        dropdown.appendChild(option);
-                    });
+        const urlParams = new URLSearchParams(window.location.search);
+        const station = urlParams.get('station');
+        function setStationDetails(stationName) {
+            document.getElementById('station').textContent = stationName;
+        }
+        
+        if (station === 'DDW7') {
+            setStationDetails('DDW7');
+        } else if (station === 'DMD9') {
+            setStationDetails('DMD9');
+        } 
+
+ 
+        fetch(`/api/drivers?station=${station}`)
+            .then(response => response.json())
+            .then(data => {
+                var dropdown = document.getElementById('driverNameDropdown');
+                console.log("InnerHTML: " + dropdown.innerHTML);
+                dropdown.innerHTML = ''; // Clear existing options
+                data.drivers.forEach(driver => {
+                    console.log("Added: " + driver);
+                    var option = document.createElement('option');
+                    option.value = driver;
+                    option.textContent = driver;
+                    dropdown.appendChild(option);
+                });
+                var dropdown = document.getElementById('addDriverDropdown');
+                dropdown.innerHTML = ''; // Clear existing options
+                data.newDrivers.forEach(driver => {
+                    var option = document.createElement('option');
+                    option.value = driver;
+                    option.textContent = driver;
+                    dropdown.appendChild(option);
                 })
-                .catch(error => console.error('Error fetching drivers:', error));
-        });
+            })
+            .catch(error => console.error('Error fetching drivers:', error));
+        
 
         // Trigger change event to populate dropdown on initial load
         document.getElementById('station').dispatchEvent(new Event('change'));
@@ -184,13 +194,39 @@
         }
 
         function updateIframe() {
-            const station = document.getElementById('station').value;
+            const urlParams = new URLSearchParams(window.location.search);
+            const station = urlParams.get('station');
+            console.log("updateIFrame: " + station)
             const iframe = document.getElementById('iFrame');
             iframe.src = iframeUrls[station];
             refreshIframe(); // Refresh the iframe to load the new content
         }
 
-        document.getElementById('station').addEventListener('change', updateIframe);
+        function refreshDropdowns(){
+            fetch(`/api/drivers?station=${station}`)
+            .then(response => response.json())
+            .then(data => {
+                var dropdown = document.getElementById('driverNameDropdown');
+                console.log("InnerHTML: " + dropdown.innerHTML);
+                dropdown.innerHTML = ''; // Clear existing options
+                data.drivers.forEach(driver => {
+                    console.log("Added: " + driver);
+                    var option = document.createElement('option');
+                    option.value = driver;
+                    option.textContent = driver;
+                    dropdown.appendChild(option);
+                });
+                var dropdown = document.getElementById('addDriverDropdown');
+                dropdown.innerHTML = ''; // Clear existing options
+                data.newDrivers.forEach(driver => {
+                    var option = document.createElement('option');
+                    option.value = driver;
+                    option.textContent = driver;
+                    dropdown.appendChild(option);
+                })
+            })
+            .catch(error => console.error('Error fetching drivers:', error));
+        }
 
         document.getElementById('dataField').addEventListener('input', function() {
             event.preventDefault();
@@ -199,7 +235,8 @@
                 var badgeNumber = dataField.value;
                 var time = document.getElementById('clock').textContent
                 if (badgeNumber.length == 8){
-                    var station = document.getElementById("station").value
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const station = urlParams.get('station');                    
                     var formData = JSON.stringify({ badgeNumber: badgeNumber, station: station, inputType: "Scan", submissionTime: time});
                     fetch('/scan', {
                         method: 'POST',
@@ -218,6 +255,7 @@
                                 document.getElementById('form2message').textContent = "";
                                 document.getElementById('form3message').textContent = "";
                                 refreshIframe()
+                                refreshDropdowns()
                             } else {
                                 document.getElementById('form1message').textContent = "BLAH BLAH BLAH";
                                 document.getElementById('form1message').classList.add('error');
@@ -228,6 +266,7 @@
                         }).catch(error => {
                             console.error('Error:', error);
                             document.getElementById('form1message').textContent = "An error occurred.";
+                            document.getElementById('form1message').classList.remove('success');
                             document.getElementById('form1message').classList.add('error');
                             document.getElementById("dataField").value = '';
                             document.getElementById('form2message').textContent = "";
@@ -249,11 +288,37 @@
     </script>
     
     <script>
+        function refreshDropdowns(){
+            fetch(`/api/drivers?station=${station}`)
+            .then(response => response.json())
+            .then(data => {
+                var dropdown = document.getElementById('driverNameDropdown');
+                console.log("InnerHTML: " + dropdown.innerHTML);
+                dropdown.innerHTML = ''; // Clear existing options
+                data.drivers.forEach(driver => {
+                    console.log("Added: " + driver);
+                    var option = document.createElement('option');
+                    option.value = driver;
+                    option.textContent = driver;
+                    dropdown.appendChild(option);
+                });
+                var dropdown = document.getElementById('addDriverDropdown');
+                dropdown.innerHTML = ''; // Clear existing options
+                data.newDrivers.forEach(driver => {
+                    var option = document.createElement('option');
+                    option.value = driver;
+                    option.textContent = driver;
+                    dropdown.appendChild(option);
+                })
+            })
+            .catch(error => console.error('Error fetching drivers:', error));
+        }
         document.getElementById('driverForm').addEventListener('submit', function(event) {
             event.preventDefault();
             var dataField = document.getElementById('driverNameDropdown');
             var driverName = dataField.value;
-            var station = document.getElementById("station").value
+            const urlParams = new URLSearchParams(window.location.search);
+            const station = urlParams.get('station');
             var time = document.getElementById('clock').textContent
             var formData = JSON.stringify({ EmployeeName: driverName, badgeNumber: "99999999", inputType: "Manual input", station: station, submissionTime: time});
             fetch('/scan', {
@@ -268,44 +333,32 @@
                     dataField.value = ''; // Clear the input field
                     document.getElementById('form2message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
                     document.getElementById('form2message').classList.remove('error');
+                    document.getElementById('form2message').classList.add('success');
+                    document.getElementById('form1message').classList.remove('success');
+                    document.getElementById('form3message').classList.remove('success');
                     document.getElementById('form1message').textContent = "";
                     document.getElementById('form3message').textContent = "";
-                    
-                    var selectedStation = document.getElementById('station').value;
-                    fetch(`/api/drivers?station=${selectedStation}`)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const station = urlParams.get('station');
+                    fetch(`/api/drivers?station=${station}`)
                         .then(response => response.json())
                         .then(data => {
-                            var dropdown = document.getElementById('driverNameDropdown');
-                            dropdown.innerHTML = ''; // Clear existing options
-                            data.drivers.forEach(driver => {
-                                var option = document.createElement('option');
-                                option.value = driver;
-                                option.textContent = driver;
-                                dropdown.appendChild(option);
-                            });
-                            var dropdown = document.getElementById('addDriverDropdown');
-                                dropdown.innerHTML = ''; // Clear existing options
-                                data.newDrivers.forEach(driver => {
-                                    var option = document.createElement('option');
-                                    option.value = driver;
-                                    option.textContent = driver;
-                                    dropdown.appendChild(option);
-                            });
+                            refreshDropdowns()
                         })
                         .catch(error => console.error('Error fetching drivers:', error));
                     refreshIframe()
                   } else {
                       document.getElementById('form2message').textContent = data.message;
                       document.getElementById('form2message').classList.add('error');
+                      document.getElementById('form2message').classList.remove('success');
                       document.getElementById('form1message').textContent = "";
                       document.getElementById('form3message').textContent = "";
-
-                      
                   }
               }).catch(error => {
                   console.error('Error:', error);
                   document.getElementById('form2message').textContent = "An error occurred.";
                   document.getElementById('form2message').classList.add('error');
+                  document.getElementById('form2message').classList.remove('success');
                   document.getElementById('form1message').textContent = "";
                   document.getElementById('form3message').textContent = "";
 
@@ -323,12 +376,38 @@
         updateClock(); // Initial call to display clock immediately
     </script> 
     <script>
+        function refreshDropdowns(){
+            fetch(`/api/drivers?station=${station}`)
+            .then(response => response.json())
+            .then(data => {
+                var dropdown = document.getElementById('driverNameDropdown');
+                console.log("InnerHTML: " + dropdown.innerHTML);
+                dropdown.innerHTML = ''; // Clear existing options
+                data.drivers.forEach(driver => {
+                    console.log("Added: " + driver);
+                    var option = document.createElement('option');
+                    option.value = driver;
+                    option.textContent = driver;
+                    dropdown.appendChild(option);
+                });
+                var dropdown = document.getElementById('addDriverDropdown');
+                dropdown.innerHTML = ''; // Clear existing options
+                data.newDrivers.forEach(driver => {
+                    var option = document.createElement('option');
+                    option.value = driver;
+                    option.textContent = driver;
+                    dropdown.appendChild(option);
+                })
+            })
+            .catch(error => console.error('Error fetching drivers:', error));
+        }
         document.getElementById('addBadgeForm').addEventListener('submit', function(event) {
             event.preventDefault();
             var dataField = document.getElementById('addDriverDropdown');
             var badge_Number = document.getElementById("newDriverDataField").value
             var newDriverName = dataField.value;
-            var station = document.getElementById("station").value
+            const urlParams = new URLSearchParams(window.location.search);
+            const station = urlParams.get('station');
             var time = document.getElementById('clock').textContent
             var formData = JSON.stringify({ EmployeeName: newDriverName, badgeNumber: badge_Number, inputType: "Scan", station: station, submissionTime: time});
             fetch('/scan', {
@@ -343,28 +422,18 @@
                         dataField.value = ''; // Clear the input field
                         document.getElementById('form3message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
                         document.getElementById('form3message').classList.remove('error');
+                        document.getElementById('form3message').classList.add('success');
+                        document.getElementById('form1message').classList.remove('success');
+                        document.getElementById('form2message').classList.remove('success');
+
                         document.getElementById('form1message').textContent = "";
                         refreshIframe()
-                        var selectedStation = document.getElementById('station').value;
-                        fetch(`/api/drivers?station=${selectedStation}`)
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const station = urlParams.get('station');
+                        fetch(`/api/drivers?station=${station}`)
                             .then(response => response.json())
                             .then(data => {
-                                var dropdown = document.getElementById('addDriverDropdown');
-                                dropdown.innerHTML = ''; // Clear existing options
-                                data.newDrivers.forEach(driver => {
-                                    var option = document.createElement('option');
-                                    option.value = driver;
-                                    option.textContent = driver;
-                                    dropdown.appendChild(option);
-                                });
-                                var dropdown = document.getElementById('driverNameDropdown');
-                                dropdown.innerHTML = ''; // Clear existing options
-                                data.drivers.forEach(driver => {
-                                    var option = document.createElement('option');
-                                    option.value = driver;
-                                    option.textContent = driver;
-                                    dropdown.appendChild(option);
-                                });
+                                refreshDropdowns()
                             })
                             .catch(error => console.error('Error fetching drivers:', error));
                         document.getElementById('newDriverDataField').value = "";
@@ -372,6 +441,7 @@
                   } else {
                       document.getElementById('form3message').textContent = data.message;
                       document.getElementById('form3message').classList.add('error');
+                      document.getElementById('form3message').classList.remove('success');
                       document.getElementById('form1message').textContent = "";
                       document.getElementById('form2message').textContent = "";
 
@@ -381,6 +451,7 @@
                   console.error('Error:', error);
                   document.getElementById('form3message').textContent = "An error occurred.";
                   document.getElementById('form3message').classList.add('error');
+                  document.getElementById('form3message').classList.remove('success');
                   document.getElementById('form1message').textContent = "";
                   document.getElementById('form2message').textContent = "";
 

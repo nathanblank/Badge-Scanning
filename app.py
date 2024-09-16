@@ -36,6 +36,8 @@ badgeNumbers = []
 employeesClean = {}
 employeesWorkingToday = []
 employeesAndRecordID = {}
+employeesForDropdown = []
+station = ""
 currDate = datetime.now()
 progress = {'completed_rows': 0, 'total_rows': 0}
 employeesWorkingTodayAndRecordID = {}
@@ -168,9 +170,12 @@ def updateAllEmployeesAndRecordID():
 
 @app.route('/api/drivers', methods=['GET'])
 def get_drivers():
-    employeesForDropDown = []
+    global employeesWorkingTodayAndRecordID
+    global employeesForDropdown
+    global station
     newEmployeesToday = []
     allEmployeesNoBarcodes = []
+    employeesForDropdown = []
     station = request.args.get('station')
     continueCheck = True
     currDate = datetime.now()
@@ -191,12 +196,12 @@ def get_drivers():
             continueCheck = False
     
         for record in data['records']:
-            employeesForDropDown.append(record['fields']['Name'])
+            employeesForDropdown.append(record['fields']['Name'])
             employeesWorkingTodayAndRecordID[record['fields']['Name']] = record['id']
     
-    employeesForDropDown.sort()
+    employeesForDropdown.sort()
     
-    filter_formula = f"LEN({'badgeNumber'}) != 8"
+    filter_formula = f"IF(LEN({'badgeNumber'}) = 0, TRUE(), FALSE())"
     params = {
         "filterByFormula": filter_formula,
     }
@@ -215,9 +220,9 @@ def get_drivers():
             allEmployeesNoBarcodes.append(record['fields']['Name'])
     
     allEmployeesNoBarcodes.sort()
-    newEmployeesToday = [item for item in employeesForDropDown if item in allEmployeesNoBarcodes]
+    newEmployeesToday = [item for item in employeesForDropdown if item in allEmployeesNoBarcodes]
     newEmployeesToday.sort()
-    return jsonify(drivers=employeesForDropDown, newDrivers = newEmployeesToday)
+    return jsonify(drivers=employeesForDropdown, newDrivers = newEmployeesToday)
 
 
 
@@ -229,6 +234,7 @@ def scan():
     global employeesWorkingToday
     global employeesAndRecordID
     global currDate
+    global station
     unknownEmployee = False
     global employeesWorkingTodayAndRecordID
     if request.method == 'GET':
@@ -274,40 +280,66 @@ def scan():
         print(data)
         badge_number = data.get('badgeNumber')  
         employeeName = data.get('EmployeeName', '')
-        if badge_number != "99999999":
-            if badge_number in badgeNumbers: # if that badge number exists
-                employeeName = employeesClean[badge_number]
+        if badge_number != "" and employeeName != "":
+            a = 1
+        else:
+            if badge_number != "99999999":
+                if (badge_number != "" and badge_number in badgeNumbers): 
+                    employeeName = employeesClean[badge_number]
+                else:
+                    unknownEmployee = True
+                    updatingData = {
+                        "fields": {
+                            "Name": employeeName,
+                            "badgeNumber": badge_number
+                        }
+                    }
+                    updateAllEmployeesAndRecordID()
+                    updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
+                    response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
+                
+        #Updating attendance
+        if (unknownEmployee == False):
+
+            currently = datetime.now()
+            ddw7LateTime = datetime.now().replace(hour=9, minute=15, second=0, microsecond=0)
+            dmd9LateTime = datetime.now().replace(hour=9, minute=30, second=0, microsecond=0)
+
+            if (station == "DDW7" and currently > ddw7LateTime) or (station == "DMD9" and currently > dmd9LateTime):
+                updatingData = {
+                    "fields": {
+                        "Name": employeeName,
+                        "Status": "Late"
+                    }
+                }
             else:
                 updatingData = {
                     "fields": {
                         "Name": employeeName,
-                        "badgeNumber": badge_number
+                        "Status": "Present"
                     }
                 }
-                updateAllEmployeesAndRecordID()
-                updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
-                response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
-                
-        #Updating attendance
-        if (unknownEmployee == False):
-            #TODO: IMPLEMENT LATE FEATURE
-            # if (station == "DDW7" and currTime > "9:15") or (station == "DMD9" and currTime > 9:30):
-            # updatingData = {
-            #     "fields": {
-            #         "Name": employeeName,
-            #         "Status": "Late"
-            #     }
-            # }
-            # else:
-            updatingData = {
-                "fields": {
-                    "Name": employeeName,
-                    "Status": "Present"
-                }
-            }
             employeesWorkingTodayAndRecordID = {k: employeesWorkingTodayAndRecordID[k] for k in sorted(employeesWorkingTodayAndRecordID)}
-            attendancePostingURL = ATTENDANCE_URL + "/" + employeesWorkingTodayAndRecordID[employeeName]
-            response = requests.patch(attendancePostingURL, headers=HEADERS, data=json.dumps(updatingData))
+            try:
+                attendancePostingURL = ATTENDANCE_URL + "/" + employeesWorkingTodayAndRecordID[employeeName]
+                response = requests.patch(attendancePostingURL, headers=HEADERS, data=json.dumps(updatingData))
+            except:
+                currDate = datetime.now()
+                formatted_date = currDate.strftime("%m/%d/%Y")
+                
+                updatingData = {
+                    "fields": {
+                        "Name": employeeName,
+                        "Status": "Present but not on schedule",
+                        "Date": formatted_date,
+                        "Station": station,
+                        "Route": "EXTRA",
+                        "Staging": "",
+                        "Wave": "",
+                        "Notes": ""
+                    }
+                }
+                response = requests.post(ATTENDANCE_URL, headers=HEADERS, json=updatingData)
             if response.status_code == 200:
                 updated_record = response.json()
                 print("Record updated successfully:")
