@@ -133,7 +133,7 @@
                     {% endfor %}
                 </select>
                 <input type="number" name="newBadgeNumber" id="newDriverDataField" placeholder="Enter badge number" class="input-field" minlength = "8" maxlength="8">
-                <input type="submit" value="Submit" class="submit-button">
+                <input type="submit" value="Submit" id = "bottomSubmitButton" class="submit-button">
             </form>
             <div id="form3message" class="message"></div>
         </div>
@@ -401,7 +401,8 @@
             })
             .catch(error => console.error('Error fetching drivers:', error));
         }
-        document.getElementById('addBadgeForm').addEventListener('submit', function(event) {
+        document.getElementById('bottomSubmitButton').addEventListener('click', function(event) {
+            console.log("WHY ME")
             event.preventDefault();
             var dataField = document.getElementById('addDriverDropdown');
             var badge_Number = document.getElementById("newDriverDataField").value

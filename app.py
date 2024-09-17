@@ -9,7 +9,7 @@ import pandas as pd
 from thefuzz import process, fuzz
 import json
 from datetime import datetime
-
+import pytz
 # Load environment variables from .env file
 load_dotenv()
 
@@ -300,10 +300,10 @@ def scan():
                 
         #Updating attendance
         if (unknownEmployee == False):
-
-            currently = datetime.now()
-            ddw7LateTime = datetime.now().replace(hour=9, minute=15, second=0, microsecond=0)
-            dmd9LateTime = datetime.now().replace(hour=9, minute=30, second=0, microsecond=0)
+            est_timezone = pytz.timezone('US/Eastern')
+            currently = datetime.now(est_timezone)
+            ddw7LateTime = datetime.now(est_timezone).replace(hour=9, minute=15, second=0, microsecond=0)
+            dmd9LateTime = datetime.now(est_timezone).replace(hour=9, minute=30, second=0, microsecond=0)
 
             if (station == "DDW7" and currently > ddw7LateTime) or (station == "DMD9" and currently > dmd9LateTime):
                 updatingData = {
