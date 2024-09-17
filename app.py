@@ -280,23 +280,25 @@ def scan():
         print(data)
         badge_number = data.get('badgeNumber')  
         employeeName = data.get('EmployeeName', '')
-        if badge_number != "" and employeeName != "":
+        if badge_number != "" and employeeName != "" and badge_number not in employeesClean:
             a = 1
         else:
             if badge_number != "99999999":
                 if (badge_number != "" and badge_number in badgeNumbers): 
-                    employeeName = employeesClean[badge_number]
-                else:
-                    unknownEmployee = True
-                    updatingData = {
-                        "fields": {
-                            "Name": employeeName,
-                            "badgeNumber": badge_number
+                    try:
+                        employeeName = employeesClean[badge_number]
+                    except:
+                        unknownEmployee = True
+                        updatingData = {
+                            "fields": {
+                                "Name": employeeName,
+                                "badgeNumber": badge_number
+                            }
                         }
-                    }
-                    updateAllEmployeesAndRecordID()
-                    updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
-                    response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
+                        updateAllEmployeesAndRecordID()
+                        updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
+                        response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
+                    
                 
         #Updating attendance
         if (unknownEmployee == False):
