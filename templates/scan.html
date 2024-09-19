@@ -150,6 +150,7 @@
                 document.getElementById('stationNew').value = stationLoad; // Set the hidden field's value
                 updateIframe(stationLoad); // Pass station value to updateIframe
             }
+            document.getElementById('dataField').focus();
         };
         
         const urlParams = new URLSearchParams(window.location.search);
@@ -188,10 +189,6 @@
             })
             .catch(error => console.error('Error fetching drivers:', error));
         
-
-        // Trigger change event to populate dropdown on initial load
-        document.getElementById('station').dispatchEvent(new Event('change'));
-
 
         const iframeUrls = {
             'DDW7': 'https://airtable.com/embed/appeACdHweImPB2eo/shr7UxlKS1mf5o70d', // URL for DDW7
@@ -299,35 +296,8 @@
 
             setInterval(updateClock, 1000);
             updateClock(); // Initial call to display clock immediately
-    </script>
-    
-    <script>
-        function refreshDropdowns(){
-            const station = document.getElementById('station');
-            fetch(`/api/drivers?station=${station}`)
-            .then(response => response.json())
-            .then(data => {
-                var dropdown = document.getElementById('driverNameDropdown');
-                console.log("InnerHTML: " + dropdown.innerHTML);
-                dropdown.innerHTML = ''; // Clear existing options
-                data.drivers.forEach(driver => {
-                    console.log("Added: " + driver);
-                    var option = document.createElement('option');
-                    option.value = driver;
-                    option.textContent = driver;
-                    dropdown.appendChild(option);
-                });
-                var dropdown = document.getElementById('addDriverDropdown');
-                dropdown.innerHTML = ''; // Clear existing options
-                data.newDrivers.forEach(driver => {
-                    var option = document.createElement('option');
-                    option.value = driver;
-                    option.textContent = driver;
-                    dropdown.appendChild(option);
-                })
-            })
-            .catch(error => console.error('Error fetching drivers:', error));
-        }
+
+        
         document.getElementById('driverForm').addEventListener('submit', function(event) {
             event.preventDefault();
             var dataField = document.getElementById('driverNameDropdown');
@@ -375,45 +345,8 @@
 
               });
         });
-        function updateClock() {
-            var now = new Date();
-            var hours = String(now.getHours()).padStart(2, '0');
-            var minutes = String(now.getMinutes()).padStart(2, '0');
-            var seconds = String(now.getSeconds()).padStart(2, '0');
-            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
-        }
+        
 
-        setInterval(updateClock, 1000);
-        updateClock(); // Initial call to display clock immediately
-    </script> 
-    <script>
-        function refreshDropdowns(){
-            const station = urlParams.get('station');
-            console.log("STATION LOCATION 1: " + station);
-            fetch(`/api/drivers?station=${station}`)
-            .then(response => response.json())
-            .then(data => {
-                var dropdown = document.getElementById('driverNameDropdown');
-                console.log("InnerHTML: " + dropdown.innerHTML);
-                dropdown.innerHTML = ''; // Clear existing options
-                data.drivers.forEach(driver => {
-                    console.log("Added: " + driver);
-                    var option = document.createElement('option');
-                    option.value = driver;
-                    option.textContent = driver;
-                    dropdown.appendChild(option);
-                });
-                var dropdown = document.getElementById('addDriverDropdown');
-                dropdown.innerHTML = ''; // Clear existing options
-                data.newDrivers.forEach(driver => {
-                    var option = document.createElement('option');
-                    option.value = driver;
-                    option.textContent = driver;
-                    dropdown.appendChild(option);
-                })
-            })
-            .catch(error => console.error('Error fetching drivers:', error));
-        }
         document.getElementById('bottomSubmitButton').addEventListener('click', function(event) {
             console.log("WHY ME")
             event.preventDefault();
