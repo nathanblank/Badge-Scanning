@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Page</title>
     <style>
+        #submitBtn:disabled {
+            background-color: gray;
+            cursor: not-allowed;
+        }
         .upload-container {
             display: flex;
             flex-direction: column;
@@ -169,7 +173,7 @@
                     <option value="DDW7">DDW7</option>
                     <option value="DMD9">DMD9</option>
                 </select>
-                <input type="submit" value="Upload">
+                <input type="submit" value="Upload" id="submitBtn">
             </form>
             <div id="uploadformmessage" class="message"></div>
         </div>
@@ -188,8 +192,9 @@
         }
 
         document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            const submitBtn = document.getElementById("submitBtn");
+            submitBtn.disabled = true;
             document.getElementById('uploadformmessage').textContent = "Please wait approximately 10 seconds for data to upload.";
-
             event.preventDefault();  // Prevent the default form submission
             
             const formData = new FormData(this);  // Create FormData object from the form
@@ -199,7 +204,7 @@
                     method: 'POST',
                     body: formData // FormData object should be sent without setting 'Content-Type'
                 });
-
+                document.getElementById("fileInput").value = "";
                 if (response.ok) { // Check if status code is 200-299
                     const data = await response.json(); // Parse JSON only if the response is OK
 
