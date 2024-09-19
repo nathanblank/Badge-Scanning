@@ -280,7 +280,7 @@ def scan():
         print(data)
         badge_number = data.get('badgeNumber')  
         employeeName = data.get('EmployeeName', '')
-        if badge_number != "" and employeeName != "" and badge_number not in employeesClean:
+        if badge_number != "" and employeeName != "" and badge_number in badgeNumbers:
             a = 1
         else:
             if badge_number != "99999999":
@@ -298,8 +298,16 @@ def scan():
                         updateAllEmployeesAndRecordID()
                         updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
                         response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
-                    
-                
+                elif(badge_number not in badgeNumbers):
+                    updatingData = {
+                                "fields": {
+                                    "Name": employeeName,
+                                    "badgeNumber": badge_number
+                                }
+                            }
+                    updateAllEmployeesAndRecordID()
+                    updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
+                    response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
         #Updating attendance
         if (unknownEmployee == False):
             est_timezone = pytz.timezone('US/Eastern')
