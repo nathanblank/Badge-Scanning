@@ -94,7 +94,7 @@
         }
     </style>
 </head>
-<body onload="updateIframe()">
+<body onload="updateIframe(station)">
     <div class="flex vstack">
         <div class="container">
             <!-- <img src="MBBD.jpg" alt="MBBD Logo"> -->
@@ -104,6 +104,7 @@
             <form id="dataForm">
                 <h2>Scan employee badge below. Click on the text field to ensure scanner is entering data correctly.</h2>
                 <input type="number" name="badgeNumber" id="dataField" placeholder="Enter badge number" class="input-field" minlength = "8" maxlength="8">
+                <input type="hidden" id="stationNew" name="station" value="updateValue()">
             </form>
             
             <div id="form1message" class="message"></div>
@@ -134,11 +135,23 @@
                 </select>
                 <input type="number" name="newBadgeNumber" id="newDriverDataField" placeholder="Enter badge number" class="input-field" minlength = "8" maxlength="8">
                 <input type="submit" value="Submit" id = "bottomSubmitButton" class="submit-button">
+                <input type="hidden" id="station" name="station" value="">
             </form>
             <div id="form3message" class="message"></div>
         </div>
     </div>   
     <script>
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const stationLoad = urlParams.get('station'); // Get the 'station' parameter from the URL
+            console.log("ON LOAD: " + stationLoad);
+            if (stationLoad == "DDW7" || stationLoad == "DMD9") {
+                console.log("GOT HERE IN LOAD");
+                document.getElementById('stationNew').value = stationLoad; // Set the hidden field's value
+                updateIframe(stationLoad); // Pass station value to updateIframe
+            }
+        };
+        
         const urlParams = new URLSearchParams(window.location.search);
         const station = urlParams.get('station');
         function setStationDetails(stationName) {
@@ -151,7 +164,6 @@
             setStationDetails('DMD9');
         } 
 
- 
         fetch(`/api/drivers?station=${station}`)
             .then(response => response.json())
             .then(data => {
@@ -181,21 +193,22 @@
         document.getElementById('station').dispatchEvent(new Event('change'));
 
 
-
         const iframeUrls = {
             'DDW7': 'https://airtable.com/embed/appeACdHweImPB2eo/shr7UxlKS1mf5o70d', // URL for DDW7
             'DMD9': 'https://airtable.com/embed/appeACdHweImPB2eo/shrWdWWSIGFvsaY5B'  // URL for DMD9
         };
         function refreshIframe() {
+            console.log("TRIED REFRESHING IFRAME");
             var iframe = document.getElementById('iFrame');
             var src = iframe.src;
+            console.log("IFRAME SRC: " + src);
             iframe.src = ''; // Temporarily set src to empty
             iframe.src = src; // Reset to the original src to force a refresh
         }
 
-        function updateIframe() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const station = urlParams.get('station');
+        function updateIframe(inputStation) {
+            console.log("UPDATE IFRAME HERE");
+            const station = document.getElementById('stationNew').value;
             console.log("updateIFrame: " + station)
             const iframe = document.getElementById('iFrame');
             iframe.src = iframeUrls[station];
@@ -236,7 +249,8 @@
                 var time = document.getElementById('clock').textContent
                 if (badgeNumber.length == 8){
                     const urlParams = new URLSearchParams(window.location.search);
-                    const station = urlParams.get('station');                    
+                    const station = urlParams.get('station');  
+                    console.log("STATION FROM URL 1: " + station);          
                     var formData = JSON.stringify({ badgeNumber: badgeNumber, station: station, inputType: "Scan", submissionTime: time});
                     fetch('/scan', {
                         method: 'POST',
@@ -254,8 +268,8 @@
                                 document.getElementById("dataField").value = '';
                                 document.getElementById('form2message').textContent = "";
                                 document.getElementById('form3message').textContent = "";
-                                refreshIframe()
                                 refreshDropdowns()
+                                refreshIframe()
                             } else {
                                 document.getElementById('form1message').textContent = "BLAH BLAH BLAH";
                                 document.getElementById('form1message').classList.add('error');
@@ -289,6 +303,7 @@
     
     <script>
         function refreshDropdowns(){
+            const station = document.getElementById('station');
             fetch(`/api/drivers?station=${station}`)
             .then(response => response.json())
             .then(data => {
@@ -340,13 +355,9 @@
                     document.getElementById('form3message').textContent = "";
                     const urlParams = new URLSearchParams(window.location.search);
                     const station = urlParams.get('station');
-                    fetch(`/api/drivers?station=${station}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            refreshDropdowns()
-                        })
-                        .catch(error => console.error('Error fetching drivers:', error));
-                    refreshIframe()
+                    console.log("STATION LOCATION 2: " + station);
+                    refreshDropdowns();
+                    refreshIframe();
                   } else {
                       document.getElementById('form2message').textContent = data.message;
                       document.getElementById('form2message').classList.add('error');
@@ -377,6 +388,8 @@
     </script> 
     <script>
         function refreshDropdowns(){
+            const station = urlParams.get('station');
+            console.log("STATION LOCATION 1: " + station);
             fetch(`/api/drivers?station=${station}`)
             .then(response => response.json())
             .then(data => {
@@ -428,15 +441,11 @@
                         document.getElementById('form2message').classList.remove('success');
 
                         document.getElementById('form1message').textContent = "";
-                        refreshIframe()
                         const urlParams = new URLSearchParams(window.location.search);
                         const station = urlParams.get('station');
-                        fetch(`/api/drivers?station=${station}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                refreshDropdowns()
-                            })
-                            .catch(error => console.error('Error fetching drivers:', error));
+                        console.log("STATION LOCATION 3: " + station);
+                        refreshDropdowns()
+                        refreshIframe()
                         document.getElementById('newDriverDataField').value = "";
 
                   } else {
