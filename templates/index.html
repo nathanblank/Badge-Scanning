@@ -9,6 +9,15 @@
             background-color: gray;
             cursor: not-allowed;
         }
+        .active {
+            background-color: blue;
+            color: white;
+          }
+      
+          button:disabled {
+            background-color: gray;
+            cursor: not-allowed;
+          }
         .upload-container {
             display: flex;
             flex-direction: column;
@@ -168,11 +177,13 @@
         <div class="upload-container">
             <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
                 <h3>Please export and upload the daily roster from Hera</h3>
+                
+
+                <button class="button" value="DDW7" onclick="handleButtonClick(this)">DDW7</button>
+                <button class="button" value="DMD9" onclick="handleButtonClick(this)">DMD9</button>
                 <input type="file" id="fileInput" name="file" accept=".csv" required>
-                <select id="station" name="station" class="dropdown-menu">
-                    <option value="DDW7">DDW7</option>
-                    <option value="DMD9">DMD9</option>
-                </select>
+                <input type="hidden" id="station" name="station" value="">
+
                 <input type="submit" value="Upload" id="submitBtn">
             </form>
             <div id="uploadformmessage" class="message"></div>
@@ -187,6 +198,29 @@
     </div>
     <script>
         
+        function handleButtonClick(button) {
+            // Get the hidden input field
+            const stationField = document.getElementById("station");
+      
+            // Get both buttons
+            const buttons = document.querySelectorAll("button");
+      
+            // Loop through all buttons to remove active class
+            buttons.forEach(btn => {
+              btn.classList.remove("active");
+              button.classList.add("button");
+            });
+      
+            // Add active class to the clicked button
+            button.classList.add("active");
+      
+            // Set the hidden field value to the selected button's value
+            stationField.value = button.value;
+      
+            // Log the selected station for demo purposes
+            console.log("Selected station: " + stationField.value);
+          }
+
         function navigateToStation(station) {
             window.location.href = `/scan?station=${station}`;
         }
@@ -215,17 +249,20 @@
                     } else {
                         document.getElementById('uploadformmessage').textContent = "An error occurred.";
                         document.getElementById('uploadformmessage').classList.add('error');
+                        submitBtn.disabled = false;
                     }
                 } else {
                     // Handle non-OK responses
                     document.getElementById('uploadformmessage').textContent = "An error occurred.";
                     document.getElementById('uploadformmessage').classList.add('error');
+                    submitBtn.disabled = false;
                     throw new Error('Network response was not ok');
                 }
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('uploadformmessage').textContent = 'Failed to upload data.';
                 document.getElementById('uploadformmessage').classList.add('error');
+                submitBtn.disabled = false;
             }
         });
     </script>
