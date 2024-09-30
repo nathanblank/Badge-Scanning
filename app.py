@@ -174,7 +174,7 @@ def get_drivers():
     global employeesForDropdown
     global station
     newEmployeesToday = []
-    allEmployeesNoBarcodes = []
+    allEmployees = []
     employeesForDropdown = []
     station = request.args.get('station')
     continueCheck = True
@@ -201,14 +201,10 @@ def get_drivers():
     
     employeesForDropdown.sort()
     
-    filter_formula = f"IF(LEN({'badgeNumber'}) = 0, TRUE(), FALSE())"
-    params = {
-        "filterByFormula": filter_formula,
-    }
+    
+    params = {}
     continueCheck = True
     while (continueCheck == True):
-        # Construct the filter formula
-        # print(EMPLOYEES_URL)
         response = requests.get(EMPLOYEES_URL, headers=HEADERS, params=params)
         data = response.json()
         try:
@@ -217,10 +213,10 @@ def get_drivers():
             continueCheck = False
     
         for record in data['records']:
-            allEmployeesNoBarcodes.append(record['fields']['Name'])
-    
-    allEmployeesNoBarcodes.sort()
-    newEmployeesToday = [item for item in employeesForDropdown if item in allEmployeesNoBarcodes]
+            allEmployees.append(record['fields']['Name'])
+
+    allEmployees.sort()
+    newEmployeesToday = [item for item in employeesForDropdown if item not in allEmployees]
     newEmployeesToday.sort()
     return jsonify(drivers=employeesForDropdown, newDrivers = newEmployeesToday)
 
@@ -280,7 +276,7 @@ def scan():
         print(data)
         badge_number = data.get('badgeNumber')  
         employeeName = data.get('EmployeeName', '')
-        if badge_number != "" and employeeName != "" and badge_number in badgeNumbers:
+        if badge_number != "" and employeeName != "" and badge_number in badgeNumbers: #we know who you are and you are in the system
             a = 1
         else:
             if badge_number != "99999999":
@@ -306,8 +302,16 @@ def scan():
                                 }
                             }
                     updateAllEmployeesAndRecordID()
-                    updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
-                    response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
+                    try:
+                        updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
+                        response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
+
+                    except:
+                        if (employeeName != "" and badge_number != ""):
+                            response = requests.post(EMPLOYEES_URL, headers=HEADERS, data=updatingData)
+                        else:
+                            return jsonify({"message": "UNKNOWN EMPLOYEE"}), 202
+
         #Updating attendance
         if (unknownEmployee == False):
             est_timezone = pytz.timezone('US/Eastern')

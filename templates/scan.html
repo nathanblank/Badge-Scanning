@@ -81,6 +81,10 @@
             color: #e74c3c;
             background-color: #fbe9e7;
         }
+        .warning {
+            color: black;
+            background-color: orange;
+        }
         .success {
             color: #2ecc71;
             background-color: #e9fbe7;
@@ -125,11 +129,12 @@
         <br>  
         <iframe class="airtable-embed" frameborder="0" id = "iFrame"></iframe>
         <div class="container">
-            <h2>Add driver's badges that do not already have their badge in the system</h2>
+            <h2>Add or update driver's badges</h2>
             <form id="addBadgeForm">
                 <p class="subtitle">Select driver's name here:</p>
                 <select name="addDriverDropdown" id="addDriverDropdown" class="input-field">
-                    {% for d in newDrivers %}
+                    <option value="" disabled selected>Select an option</option>
+                    {% for d in drivers %}
                         <option value="{{d}}">{{d}}</option>
                     {% endfor %}
                 </select>
@@ -172,24 +177,36 @@
                 console.log("InnerHTML: " + dropdown.innerHTML);
                 dropdown.innerHTML = ''; // Clear existing options
                 data.drivers.forEach(driver => {
-                    console.log("Added: " + driver);
                     var option = document.createElement('option');
                     option.value = driver;
                     option.textContent = driver;
                     dropdown.appendChild(option);
                 });
-                var dropdown = document.getElementById('addDriverDropdown');
-                dropdown.innerHTML = ''; // Clear existing options
-                data.newDrivers.forEach(driver => {
+                var dropdown2 = document.getElementById('addDriverDropdown');
+                dropdown2.innerHTML = ''; // Clear existing options
+                data.drivers.forEach(driver => {
                     var option = document.createElement('option');
                     option.value = driver;
                     option.textContent = driver;
-                    dropdown.appendChild(option);
+                    dropdown2.appendChild(option);
                 })
             })
             .catch(error => console.error('Error fetching drivers:', error));
         
+                // Create a wait function
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
 
+        // Usage in an async function
+        async function waitOneSecond() {
+            console.log("Start waiting...");
+            
+            // Wait for 1 second
+            await wait(1000);
+            
+            console.log("1 second later...");
+        }
         const iframeUrls = {
             'DDW7': 'https://airtable.com/embed/appeACdHweImPB2eo/shr7UxlKS1mf5o70d', // URL for DDW7
             'DMD9': 'https://airtable.com/embed/appeACdHweImPB2eo/shrWdWWSIGFvsaY5B'  // URL for DMD9
@@ -212,30 +229,21 @@
             refreshIframe(); // Refresh the iframe to load the new content
         }
 
-        function refreshDropdowns(){
-            fetch(`/api/drivers?station=${station}`)
-            .then(response => response.json())
-            .then(data => {
-                var dropdown = document.getElementById('driverNameDropdown');
-                console.log("InnerHTML: " + dropdown.innerHTML);
-                dropdown.innerHTML = ''; // Clear existing options
-                data.drivers.forEach(driver => {
-                    console.log("Added: " + driver);
-                    var option = document.createElement('option');
-                    option.value = driver;
-                    option.textContent = driver;
-                    dropdown.appendChild(option);
-                });
-                var dropdown = document.getElementById('addDriverDropdown');
-                dropdown.innerHTML = ''; // Clear existing options
-                data.newDrivers.forEach(driver => {
-                    var option = document.createElement('option');
-                    option.value = driver;
-                    option.textContent = driver;
-                    dropdown.appendChild(option);
-                })
-            })
-            .catch(error => console.error('Error fetching drivers:', error));
+        function refreshDropdowns(name){
+            var dropdown = document.getElementById('driverNameDropdown');
+            for (let i = 0; i < dropdown.options.length; i++) {
+                if (dropdown.options[i].value === name) {
+                    dropdown.remove(i); // Remove the option
+                    break;
+                }
+                }
+            var dropdown = document.getElementById('addDriverDropdown');
+            for (let i = 0; i < dropdown.options.length; i++) {
+                if (dropdown.options[i].value === name) {
+                    dropdown.remove(i); // Remove the option
+                    break;
+                }
+            }
         }
 
         document.getElementById('dataField').addEventListener('input', function() {
@@ -244,7 +252,8 @@
                 var dataField = this;
                 var badgeNumber = dataField.value;
                 var time = document.getElementById('clock').textContent
-                if (badgeNumber.length == 8){
+                if (badgeNumber.length >= 5){
+                    waitOneSecond();
                     const urlParams = new URLSearchParams(window.location.search);
                     const station = urlParams.get('station');  
                     console.log("STATION FROM URL 1: " + station);          
@@ -265,11 +274,13 @@
                                 document.getElementById("dataField").value = '';
                                 document.getElementById('form2message').textContent = "";
                                 document.getElementById('form3message').textContent = "";
-                                refreshDropdowns()
+                                refreshDropdowns(data['employee'])
                                 refreshIframe()
                             } else {
-                                document.getElementById('form1message').textContent = "BLAH BLAH BLAH";
-                                document.getElementById('form1message').classList.add('error');
+                                document.getElementById('form1message').textContent = "Could not check-in driver. Not on schedule?";
+                                document.getElementById('form1message').classList.remove('error');
+                                document.getElementById('form1message').classList.remove('success');
+                                document.getElementById('form1message').classList.add('warning');
                                 document.getElementById("dataField").value = '';
                                 document.getElementById('form2message').textContent = "";
                                 document.getElementById('form3message').textContent = "";
@@ -326,7 +337,7 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     const station = urlParams.get('station');
                     console.log("STATION LOCATION 2: " + station);
-                    refreshDropdowns();
+                    refreshDropdowns(data['employee']);
                     refreshIframe();
                   } else {
                       document.getElementById('form2message').textContent = data.message;
@@ -348,7 +359,6 @@
         
 
         document.getElementById('bottomSubmitButton').addEventListener('click', function(event) {
-            console.log("WHY ME")
             event.preventDefault();
             var dataField = document.getElementById('addDriverDropdown');
             var badge_Number = document.getElementById("newDriverDataField").value
@@ -377,7 +387,7 @@
                         const urlParams = new URLSearchParams(window.location.search);
                         const station = urlParams.get('station');
                         console.log("STATION LOCATION 3: " + station);
-                        refreshDropdowns()
+                        refreshDropdowns(data['employee'])
                         refreshIframe()
                         document.getElementById('newDriverDataField').value = "";
 
