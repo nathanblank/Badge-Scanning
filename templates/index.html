@@ -167,7 +167,12 @@
             padding: 15px 30px; /* Adds padding to make the button larger */
             border-radius: 5px; /* Optional: Adds rounded corners */
         }
-        
+        .upload-container {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -176,12 +181,15 @@
         
         <div class="upload-container">
             <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
-                <h3>Please export and upload the daily roster from Hera</h3>
-                
-
+                <h3>Please select your station</h3>
                 <button type="button" class="button" value="DDW7" onclick="handleButtonClick(this)">DDW7</button>
                 <button type="button" class="button" value="DMD9" onclick="handleButtonClick(this)">DMD9</button>
-                <input type="file" id="fileInput" name="file" accept=".csv" required>
+                <br>
+                <h3>Please export and upload the daily roster from HERA </h3>
+                <h3>(the same file you use to create the daily tracker)</h3>
+                <div class = "upload-container">
+                    <input type="file" id="fileInput" name="file" accept=".csv" required>
+                </div>
                 <input type="hidden" id="station" name="station" value="">
 
                 <input type="submit" value="Upload" id="submitBtn">
@@ -197,7 +205,20 @@
         </div>
     </div>
     <script>
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
         
+        async function exampleFunction() {
+            console.log('Wait for 3 seconds...');
+            await sleep(3000); // 3000 milliseconds = 3 seconds
+            console.log('3 seconds later...');
+        }
+        
+        
+        function navigateToStation(station) {
+            window.location.href = `/scan?station=${station}`;
+        }
         function handleButtonClick(button) {
             // Get the hidden input field
             const stationField = document.getElementById("station");
@@ -219,13 +240,9 @@
       
             // Log the selected station for demo purposes
             console.log("Selected station: " + stationField.value);
-          }
-
-        function navigateToStation(station) {
-            window.location.href = `/scan?station=${station}`;
         }
-
         document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            const stationField = document.getElementById("station");
             const submitBtn = document.getElementById("submitBtn");
             submitBtn.disabled = true;
             document.getElementById('uploadformmessage').textContent = "Please wait approximately 10 seconds for data to upload.";
@@ -246,6 +263,8 @@
                     if (data.response === "Success! Record created.") {
                         document.getElementById('uploadformmessage').textContent = data['rows'] + " drivers successfully uploaded";
                         document.getElementById('uploadformmessage').classList.remove('error');
+                        exampleFunction();
+                        navigateToStation(stationField.value);
                     } else {
                         document.getElementById('uploadformmessage').textContent = "An error occurred.";
                         document.getElementById('uploadformmessage').classList.add('error');
