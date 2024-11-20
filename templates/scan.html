@@ -146,6 +146,13 @@
         </div>
     </div>   
     <script>
+        function updateClock() {
+            var now = new Date();
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const stationLoad = urlParams.get('station'); // Get the 'station' parameter from the URL
@@ -156,6 +163,8 @@
                 updateIframe(stationLoad); // Pass station value to updateIframe
             }
             document.getElementById('dataField').focus();
+            updateClock();
+            setInterval(updateClock, 1000); // Update clock every second
         };
         
         const urlParams = new URLSearchParams(window.location.search);
@@ -194,19 +203,7 @@
             .catch(error => console.error('Error fetching drivers:', error));
         
                 // Create a wait function
-        function wait(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        // Usage in an async function
-        async function waitOneSecond() {
-            console.log("Start waiting...");
-            
-            // Wait for 1 second
-            await wait(1000);
-            
-            console.log("1 second later...");
-        }
+        
         const iframeUrls = {
             'DDW7': 'https://airtable.com/embed/appeACdHweImPB2eo/shr7UxlKS1mf5o70d', // URL for DDW7
             'DMD9': 'https://airtable.com/embed/appeACdHweImPB2eo/shrWdWWSIGFvsaY5B'  // URL for DMD9
@@ -245,58 +242,107 @@
                 }
             }
         }
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
 
-        document.getElementById('dataField').addEventListener('input', function() {
+        // Usage in an async function
+        async function waitOneSecond() {
+            console.log("Start waiting...");
+            
+            // Wait for 1 second
+            await wait(1000);
+            
+            console.log("1 second later...");
+        }
+        let inputTimeout;
+        document.getElementById('dataField').addEventListener('input', async function () {
+            updateClock();
+            clearTimeout(inputTimeout); // Clear previous timeout
+            let timeout = null;
             event.preventDefault();
-            if (this.value) {
-                var dataField = this;
-                var badgeNumber = dataField.value;
-                var time = document.getElementById('clock').textContent
-                if (badgeNumber.length >= 5){
-                    waitOneSecond();
+        
+            var dataField = this;
+            var badgeNumber = dataField.value;
+            var time = document.getElementById('clock').textContent;
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+            timeout = setTimeout(() => {
+                if (badgeNumber.length >= 5) {
+                    console.log("BEFORE WAIT");
+                    setTimeout(() => {
+                        console.log('Waited 1 second');
+                    }, 1000); // 1000 milliseconds = 1 second
+        
+                    console.log("AFTER WAIT");
+                    badgeNumber = document.getElementById('dataField').value;
+                    console.log("BADGE NUM FROM TEXT FIELD" + badgeNumber);
                     const urlParams = new URLSearchParams(window.location.search);
-                    const station = urlParams.get('station');  
-                    console.log("STATION FROM URL 1: " + station);          
-                    var formData = JSON.stringify({ badgeNumber: badgeNumber, station: station, inputType: "Scan", submissionTime: time});
-                    fetch('/scan', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: formData
-                    }).then(response => response.json())
-                        .then(data => {
-                            if (data.message == "Success! Record created.") {
-                                dataField.value = ''; // Clear the input field
-                                document.getElementById('form1message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
-                                document.getElementById('form1message').classList.add('success');
-                                document.getElementById('form1message').classList.remove('error');
-                                document.getElementById("dataField").value = '';
-                                document.getElementById('form2message').textContent = "";
-                                document.getElementById('form3message').textContent = "";
-                                refreshDropdowns(data['employee'])
-                                refreshIframe()
-                            } else {
-                                document.getElementById('form1message').textContent = "Could not check-in driver. Not on schedule?";
-                                document.getElementById('form1message').classList.remove('error');
-                                document.getElementById('form1message').classList.remove('success');
-                                document.getElementById('form1message').classList.add('warning');
-                                document.getElementById("dataField").value = '';
-                                document.getElementById('form2message').textContent = "";
-                                document.getElementById('form3message').textContent = "";
-                            }
-                        }).catch(error => {
-                            console.error('Error:', error);
-                            document.getElementById('form1message').textContent = "An error occurred.";
-                            document.getElementById('form1message').classList.remove('success');
-                            document.getElementById('form1message').classList.add('error');
+                    const station = urlParams.get('station');
+                    console.log("STATION FROM URL 1: " + station);
+                    var formData = JSON.stringify({ badgeNumber: badgeNumber, station: station, inputType: "Scan", submissionTime: time });
+                    fetch('/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: formData })
+                    .then(response => {
+                        // Check if the response status is 200 or 202
+                        if (response.status === 200) {
+                            return response.json(); // Parse the response body as JSON
+                        } else if (response.status === 202) {
+                            // Handle the 202 status specifically
+
+                            document.getElementById('form1message').textContent = "EMPLOYEE BADGE NOT FOUND";
+                            document.getElementById('form1message').classList.add('error'); // Add the red/error styling
+                            document.getElementById('form1message').classList.remove('success', 'warning');
+                            document.getElementById('form2message').classList.remove('success', 'warning', 'error');
+                            document.getElementById('form3message').classList.remove('success', 'warning', 'error');
+                            document.getElementById("form2message").textContent = '';
+                            document.getElementById("form3message").textContent = '';
                             document.getElementById("dataField").value = '';
-                            document.getElementById('form2message').textContent = "";
-                            document.getElementById('form3message').textContent = "";
-                        });
-                    }
+
+                            throw new Error("Employee badge not found (202).");
+                        } else {
+                            throw new Error(`Server returned status: ${response.status}`);
+                        }
+                    })
+                    .then(data => {
+                        console.log('Parsed Response Data:', data);
+                        // This block now handles the parsed response data for status 200
+                        dataField.value = ''; // Clear the input field
+                        console.log("Known employee: " + data['employee']);
+                        document.getElementById('form1message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
+                        document.getElementById('form1message').classList.add('success');
+                        document.getElementById('form1message').classList.remove('error', 'warning');
+                        document.getElementById("dataField").value = '';
+                        document.getElementById('form2message').classList.remove('success', 'warning', 'error');
+                        document.getElementById('form3message').classList.remove('success', 'warning', 'error');
+                        document.getElementById("form2message").textContent = '';
+                        document.getElementById("form3message").textContent = '';                        
+                        refreshDropdowns(data['employee']);
+                        refreshIframe();
+                    })
+                    .catch(error => {
+                        console.log('Parsed Response Data ERROR:', data);
+                        // Catch block for errors and other statuses
+                        if (error.message !== "Employee badge not found (202).") { // Avoid redundant logging for handled cases
+                            console.error('Error:', error);
+                        }
+                        if (!document.getElementById('form1message').textContent) { // If not already handled
+                            document.getElementById('form1message').textContent = "An error occurred.";
+                            document.getElementById('form1message').classList.add('error');
+                            document.getElementById('form1message').classList.remove('success', 'warning');
+                            document.getElementById("dataField").value = '';
+                            document.getElementById('form2message').classList.remove('success', 'warning', 'error');
+                            document.getElementById('form3message').classList.remove('success', 'warning', 'error');
+                            document.getElementById("form2message").textContent = '';
+                            document.getElementById("form3message").textContent = '';
+                        }
+                        
+                    });
+
                 }
-            });
+            }, 1000);
+        
+            
             function updateClock() {
                 var now = new Date();
                 var hours = String(now.getHours()).padStart(2, '0');
@@ -307,55 +353,89 @@
 
             setInterval(updateClock, 1000);
             updateClock(); // Initial call to display clock immediately
-
+        });
         
         document.getElementById('driverForm').addEventListener('submit', function(event) {
             event.preventDefault();
+        
+            // Log form submission triggered
+            console.log("Driver form submission triggered");
+        
             var dataField = document.getElementById('driverNameDropdown');
             var driverName = dataField.value;
+            console.log("Driver name selected:", driverName);
+        
             const urlParams = new URLSearchParams(window.location.search);
             const station = urlParams.get('station');
-            var time = document.getElementById('clock').textContent
-            var formData = JSON.stringify({ EmployeeName: driverName, badgeNumber: "99999999", inputType: "Manual input", station: station, submissionTime: time});
+            console.log("Station from URL:", station);
+        
+            var time = document.getElementById('clock').textContent;
+            console.log("Submission time:", time);
+        
+            var formData = JSON.stringify({
+                EmployeeName: driverName,
+                badgeNumber: "99999999",
+                inputType: "Manual input",
+                station: station,
+                submissionTime: time
+            });
+            console.log("Form data being sent:", formData);
+        
             fetch('/scan', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: formData
-            }).then(response => response.json())
-              .then(data => {
+            })
+            .then(response => {
+                console.log("Fetch response status:", response.status);
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Fetch response data:", data);
+        
                 if (data.message == "Success! Record created.") {
+                    console.log("Record created successfully for:", data['employee']);
+        
                     dataField.value = ''; // Clear the input field
                     document.getElementById('form2message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
                     document.getElementById('form2message').classList.remove('error');
                     document.getElementById('form2message').classList.add('success');
-                    document.getElementById('form1message').classList.remove('success');
-                    document.getElementById('form3message').classList.remove('success');
+                    document.getElementById('form1message').classList.remove('success', 'error');
+                    document.getElementById('form3message').classList.remove('success', 'error');
                     document.getElementById('form1message').textContent = "";
                     document.getElementById('form3message').textContent = "";
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const station = urlParams.get('station');
-                    console.log("STATION LOCATION 2: " + station);
+        
                     refreshDropdowns(data['employee']);
                     refreshIframe();
-                  } else {
-                      document.getElementById('form2message').textContent = data.message;
-                      document.getElementById('form2message').classList.add('error');
-                      document.getElementById('form2message').classList.remove('success');
-                      document.getElementById('form1message').textContent = "";
-                      document.getElementById('form3message').textContent = "";
-                  }
-              }).catch(error => {
-                  console.error('Error:', error);
-                  document.getElementById('form2message').textContent = "An error occurred.";
-                  document.getElementById('form2message').classList.add('error');
-                  document.getElementById('form2message').classList.remove('success');
-                  document.getElementById('form1message').textContent = "";
-                  document.getElementById('form3message').textContent = "";
-
-              });
+                } else {
+                    console.log("Error: Could not create record. Message from server:", data.message);
+        
+                    document.getElementById('form2message').textContent = data.message;
+                    document.getElementById('form2message').classList.add('error');
+                    document.getElementById('form2message').classList.remove('success');
+                    document.getElementById('form1message').classList.remove('success', 'error');
+                    document.getElementById('form3message').classList.remove('success', 'error');
+                    document.getElementById('form1message').textContent = "";
+                    document.getElementById('form3message').textContent = "";
+                }
+            })
+            .catch(error => {
+                console.error('Error during fetch:', error);
+                document.getElementById('form2message').textContent = "An error occurred.";
+                document.getElementById('form2message').classList.add('error');
+                document.getElementById('form2message').classList.remove('success');
+                document.getElementById('form1message').classList.remove('success', 'error');
+                document.getElementById('form3message').classList.remove('success', 'error');
+                document.getElementById('form1message').textContent = "";
+                document.getElementById('form3message').textContent = "";
+            });
         });
+        
         
 
         document.getElementById('bottomSubmitButton').addEventListener('click', function(event) {
@@ -384,6 +464,7 @@
                         document.getElementById('form2message').classList.remove('success');
 
                         document.getElementById('form1message').textContent = "";
+                        document.getElementById('form2message').textContent = "";
                         const urlParams = new URLSearchParams(window.location.search);
                         const station = urlParams.get('station');
                         console.log("STATION LOCATION 3: " + station);

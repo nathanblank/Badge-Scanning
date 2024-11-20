@@ -222,7 +222,6 @@ def get_drivers():
 
 
 
-
 @app.route('/scan', methods=['GET', 'POST'])
 def scan():
     global badgeNumbers
@@ -233,57 +232,70 @@ def scan():
     global station
     unknownEmployee = False
     global employeesWorkingTodayAndRecordID
-    if request.method == 'GET':
+
+    # For GET method: Initialize records
+    if request.method == 'GET' and "badgeNumber" not in request.full_path:
+        # Code for initializing records on GET
         employeesWorkingTodayAndRecordID = {}
         count = 0
         employeesClean = {}
         params = {}
         continueCheck = True
-        while (continueCheck == True):
-            response = requests.get(EMPLOYEES_URL, headers=HEADERS, params = params)
+        while continueCheck:
+            response = requests.get(EMPLOYEES_URL, headers=HEADERS, params=params)
             data = response.json()
             try:
                 params['offset'] = data['offset']
-            except:
+            except KeyError:
                 continueCheck = False
+
             for record in data['records']:
                 try:
                     badgeNumber = record['fields']['badgeNumber']
-                except:
+                except KeyError:
                     badgeNumber = str(99999999 - count)
                     count += 1
                 employeesClean[badgeNumber] = record['fields']['Name']
-        badgeNumbers = list(employeesClean.keys()) ##TODO FIX BADGENUMBERS
-        
+        badgeNumbers = list(employeesClean.keys())
+
         continueCheck = True
         params = {}
-        while (continueCheck == True):
-            response = requests.get(EMPLOYEES_URL, headers=HEADERS, params = params)
+        while continueCheck:
+            response = requests.get(EMPLOYEES_URL, headers=HEADERS, params=params)
             data = response.json()
             try:
                 params['offset'] = data['offset']
-            except:
+            except KeyError:
                 continueCheck = False
-        
+
             for record in data['records']:
                 employeesAndRecordID[record['fields']['Name']] = record['id']
-        
-        
-            
-    elif request.method == 'POST':
+
+    # For POST method: Process the incoming data
+    else:
         """Handle POST requests."""
-        data = request.get_json() 
-        print(data)
-        badge_number = data.get('badgeNumber')  
+        data = request.get_json()  # Properly extract JSON data from request
+        print(f"Data received from frontend: {data}")
+
+        if not data:
+            return jsonify({"message": "No data received"}), 400
+
+        # Extract data fields
+        badge_number = data.get('badgeNumber', '')
         employeeName = data.get('EmployeeName', '')
-        if badge_number != "" and employeeName != "" and badge_number in badgeNumbers: #we know who you are and you are in the system
-            a = 1
+        station = data.get('station', '')
+        inputType = data.get('inputType', '')
+        submissionTime = data.get('submissionTime', '')
+
+        if badge_number != "" and employeeName != "" and badge_number in badgeNumbers:
+            # Known employee with correct badge
+            pass
         else:
             if badge_number != "99999999":
-                if (badge_number != "" and badge_number in badgeNumbers): 
+                if badge_number != "" and badge_number in badgeNumbers:
                     try:
                         employeeName = employeesClean[badge_number]
-                    except:
+                    except KeyError:
                         unknownEmployee = True
                         updatingData = {
                             "fields": {
@@ -293,31 +305,30 @@ def scan():
                         }
                         updateAllEmployeesAndRecordID()
                         updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
-                        response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
-                elif(badge_number not in badgeNumbers):
+                        response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, json=updatingData)
+                elif badge_number not in badgeNumbers:
                     updatingData = {
-                                "fields": {
-                                    "Name": employeeName,
-                                    "badgeNumber": badge_number
-                                }
-                            }
+                        "fields": {
+                            "Name": employeeName,
+                            "badgeNumber": badge_number
+                        }
+                    }
                     updateAllEmployeesAndRecordID()
                     try:
                         updateEmployeeRecordURL = EMPLOYEES_URL + "/" + employeesAndRecordID[employeeName]
-                        response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, data=json.dumps(updatingData))
-
-                    except:
-                        if (employeeName != "" and badge_number != ""):
-                            response = requests.post(EMPLOYEES_URL, headers=HEADERS, data=updatingData)
+                        response = requests.patch(updateEmployeeRecordURL, headers=HEADERS, json=updatingData)
+                    except KeyError:
+                        if employeeName != "" and badge_number != "":
+                            response = requests.post(EMPLOYEES_URL, headers=HEADERS, json=updatingData)
                         else:
                             return jsonify({"message": "UNKNOWN EMPLOYEE"}), 202
 
-        #Updating attendance
-        if (unknownEmployee == False):
+        # Updating attendance
+        if not unknownEmployee:
             est_timezone = pytz.timezone('US/Eastern')
             currently = datetime.now(est_timezone)
-            ddw7LateTime = datetime.now(est_timezone).replace(hour=9, minute=15, second=0, microsecond=0)
-            dmd9LateTime = datetime.now(est_timezone).replace(hour=9, minute=30, second=0, microsecond=0)
+            ddw7LateTime = currently.replace(hour=9, minute=15, second=0, microsecond=0)
+            dmd9LateTime = currently.replace(hour=9, minute=30, second=0, microsecond=0)
 
             if (station == "DDW7" and currently > ddw7LateTime) or (station == "DMD9" and currently > dmd9LateTime):
                 updatingData = {
@@ -336,11 +347,11 @@ def scan():
             employeesWorkingTodayAndRecordID = {k: employeesWorkingTodayAndRecordID[k] for k in sorted(employeesWorkingTodayAndRecordID)}
             try:
                 attendancePostingURL = ATTENDANCE_URL + "/" + employeesWorkingTodayAndRecordID[employeeName]
-                response = requests.patch(attendancePostingURL, headers=HEADERS, data=json.dumps(updatingData))
-            except:
+                response = requests.patch(attendancePostingURL, headers=HEADERS, json=updatingData)
+            except KeyError:
                 currDate = datetime.now()
                 formatted_date = currDate.strftime("%m/%d/%Y")
-                
+
                 updatingData = {
                     "fields": {
                         "Name": employeeName,
@@ -361,10 +372,7 @@ def scan():
             else:
                 print(f"Failed to update record: {response.status_code}")
                 print(response.json())
-            
-        station = data.get('station')
-        inputType = data.get('inputType')
-        submissionTime = data.get('submissionTime')
+
         if badge_number and station:
             airtable_data = {
                 'fields': {
@@ -387,7 +395,7 @@ def scan():
         else:
             return jsonify({"message": "Error: Badge number is required."}), 400
 
-    return render_template('scan.html', message=None, drivers_working_today = employeesWorkingToday)
+    return render_template('scan.html', message=None, drivers_working_today=employeesWorkingToday)
 
 
 if __name__ == '__main__':      
