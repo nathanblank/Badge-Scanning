@@ -3,498 +3,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask Airtable Integration</title>
+    <title>Attendance Check-In</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        /* General Reset */
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
-        }
-        .flex {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-        }
-        .vstack {
-            width: 100%;
-            max-width: 1200px; /* Set max-width to control the maximum width */
-            margin: 0 auto; /* Center the content */
-            padding: 20px;
             box-sizing: border-box;
         }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 10px;
+        }
+
+        /* Container Styling */
         .container {
+            max-width: 800px; /* Limit max width for large devices */
+            width: 100%; /* Full width on smaller devices */
+            margin: 0 auto; /* Center the container */
             background-color: #ffffff;
-            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            box-sizing: border-box;
+            padding: 20px;
         }
-        .input-field,
-        .submit-button {
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            width: 100%;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        .submit-button {
-            background-color: #28a745;
-            color: #ffffff;
-            border: none;
-            cursor: pointer;
-        }
-        .submit-button:hover {
-            background-color: #218838;
-        }
+
+        /* Titles and Subtitles */
         .title {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 10px;
+            text-align: center;
+            margin-bottom: 20px;
         }
+
         .subtitle {
             font-size: 18px;
-            margin-bottom: 5px;
-        }
-        .time-display {
-            font-family: 'Courier New', monospace;
-            background-color: #fafafa;
-            padding: 5px 10px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 20px;
-            font-size: 20px;
             text-align: center;
+            margin-bottom: 10px;
         }
+
+        /* Clock Styling */
+        .clock {
+            font-size: 36px; /* Large font size */
+            font-weight: bold; /* Bold text */
+            color: #333; /* Dark text */
+            background-color: #f9f9f9; /* Subtle background color */
+            border: 2px solid #ddd; /* Thin border for definition */
+            border-radius: 8px; /* Rounded corners */
+            padding: 10px 20px; /* Padding around the text */
+            margin: 20px auto; /* Space around and center alignment */
+            text-align: center; /* Center-align the text */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            width: 50%; /* Default width for large screens */
+            max-width: 400px; /* Limit max width */
+            min-width: 200px; /* Ensure it's not too small */
+        }
+
+        /* Form and Input Styling */
+        .input-field {
+            width: 100%; /* Full width */
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .submit-button {
+            width: 100%; /* Full width */
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            background-color: #218838;
+        }
+
+        /* Messages */
         .message {
-            font-size: 14px;
-            text-align: center;
             padding: 10px;
-            border-radius: 4px;
             margin-top: 10px;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 14px;
         }
-        .error {
-            color: #e74c3c;
-            background-color: #fbe9e7;
-        }
-        .warning {
-            color: black;
-            background-color: orange;
-        }
+
         .success {
-            color: #2ecc71;
             background-color: #e9fbe7;
+            color: #2ecc71;
         }
-        .airtable-embed {
-            width: 100%;
-            height: 533px;
-            border: 1px solid #ccc;
-            background: transparent;
-            box-sizing: border-box;
+
+        .error {
+            background-color: #fbe9e7;
+            color: #e74c3c;
+        }
+
+        /* iFrame Container */
+        .iframe-container {
+            margin-top: 20px;
+            width: 100%; /* Full width */
+        }
+
+        iframe {
+            width: 100%; /* Full width */
+            height: 500px; /* Large height for visibility */
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .title {
+                font-size: 22px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .clock {
+                width: 70%; /* Reduced width for medium devices */
+                font-size: 28px;
+            }
+
+            iframe {
+                height: 400px; /* Adjust iframe height */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .title {
+                font-size: 20px;
+            }
+
+            .subtitle {
+                font-size: 14px;
+            }
+
+            .clock {
+                width: 90%; /* Almost full width for small screens */
+                font-size: 24px;
+            }
+
+            iframe {
+                height: 300px; /* Further adjust iframe height */
+            }
         }
     </style>
 </head>
-<body onload="updateIframe(station)">
-    <div class="flex vstack">
-        <div class="container">
-            <!-- <img src="MBBD.jpg" alt="MBBD Logo"> -->
-            <p class="title"><span id="station"></span> Attendance Check-in</p>
-            <div id="clock" class="time-display"></div>
-            
-            <form id="dataForm">
-                <h2>Scan employee badge below. Click on the text field to ensure scanner is entering data correctly.</h2>
-                <input type="number" name="badgeNumber" id="dataField" placeholder="Enter badge number" class="input-field" minlength = "8" maxlength="8">
-                <input type="hidden" id="stationNew" name="station" value="updateValue()">
-            </form>
-            
-            <div id="form1message" class="message"></div>
-            
-            <!-- New form for entering driver's name -->
-            <br>
-            <form id="driverForm">
-                <p class="subtitle">If driver does not have their badge, select their name here:</p>
-                <select name="driverName" id="driverNameDropdown" class="input-field">
-                    {% for d in drivers %}
-                        <option value="{{d}}">{{d}}</option>
-                    {% endfor %}
-                </select>
-                <input type="submit" value="Submit" class="submit-button">
-            </form>
-            <div id="form2message" class="message"></div>
-        </div>
-        <br>  
-        <iframe class="airtable-embed" frameborder="0" id = "iFrame"></iframe>
-        <div class="container">
-            <h2>Add or update driver's badges</h2>
-            <form id="addBadgeForm">
-                <p class="subtitle">Select driver's name here:</p>
-                <select name="addDriverDropdown" id="addDriverDropdown" class="input-field">
-                    <option value="" disabled selected>Select an option</option>
-                    {% for d in drivers %}
-                        <option value="{{d}}">{{d}}</option>
-                    {% endfor %}
-                </select>
-                <input type="number" name="newBadgeNumber" id="newDriverDataField" placeholder="Enter badge number" class="input-field" minlength = "8" maxlength="8">
-                <input type="submit" value="Submit" id = "bottomSubmitButton" class="submit-button">
-                <input type="hidden" id="station" name="station" value="">
-            </form>
-            <div id="form3message" class="message"></div>
-        </div>
-    </div>   
-    <script>
-        function updateClock() {
-            var now = new Date();
-            var hours = String(now.getHours()).padStart(2, '0');
-            var minutes = String(now.getMinutes()).padStart(2, '0');
-            var seconds = String(now.getSeconds()).padStart(2, '0');
-            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
-        }
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const stationLoad = urlParams.get('station'); // Get the 'station' parameter from the URL
-            console.log("ON LOAD: " + stationLoad);
-            if (stationLoad == "DDW7" || stationLoad == "DMD9") {
-                console.log("GOT HERE IN LOAD");
-                document.getElementById('stationNew').value = stationLoad; // Set the hidden field's value
-                updateIframe(stationLoad); // Pass station value to updateIframe
-            }
-            document.getElementById('dataField').focus();
-            updateClock();
-            setInterval(updateClock, 1000); // Update clock every second
-        };
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const station = urlParams.get('station');
-        function setStationDetails(stationName) {
-            document.getElementById('station').textContent = stationName;
-        }
-        
-        if (station === 'DDW7') {
-            setStationDetails('DDW7');
-        } else if (station === 'DMD9') {
-            setStationDetails('DMD9');
-        } 
+<body>
+    <div class="container">
+        <p class="title">Attendance Check-In</p>
+        <div id="clock" class="clock"></div>
 
-        fetch(`/api/drivers?station=${station}`)
-            .then(response => response.json())
-            .then(data => {
-                var dropdown = document.getElementById('driverNameDropdown');
-                console.log("InnerHTML: " + dropdown.innerHTML);
-                dropdown.innerHTML = ''; // Clear existing options
-                data.drivers.forEach(driver => {
-                    var option = document.createElement('option');
-                    option.value = driver;
-                    option.textContent = driver;
-                    dropdown.appendChild(option);
+        <form id="badgeForm">
+            <input type="number" id="badgeNumber" class="input-field" placeholder="Enter badge number" required>
+            <input type="hidden" id="station" value="">
+            <button type="submit" class="submit-button">Submit Badge</button>
+        </form>
+        <div id="badgeMessage" class="message"></div>
+
+        <form id="driverForm">
+            <p class="subtitle">Driver without a badge?</p>
+            <select id="driverDropdown" class="input-field"></select>
+            <button type="submit" class="submit-button">Submit Driver</button>
+        </form>
+        <div id="driverMessage" class="message"></div>
+
+        <div class="iframe-container">
+            <iframe id="attendanceIframe"></iframe>
+        </div>
+    </div>
+        <!-- Modal for Unknown Employee -->
+    <div id="unknownEmployeeModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+        <div style="background:white; padding:20px; border-radius:8px; width:400px; text-align:center;">
+            <h3>This driver is not known to our system.</h3>
+            <p>Please select the driver from the list below:</p>
+            <select id="unknownDriverDropdown" class="input-field"></select>
+            <br><br>
+            <button id="confirmUnknownDriver" class="submit-button">Confirm</button>
+            <button id="cancelModal" class="submit-button" style="background-color:#e74c3c;">Cancel</button>
+        </div>
+    </div>
+    <script>
+        const iframeUrls = {
+            'DDW7': 'https://airtable.com/embed/appeACdHweImPB2eo/shr7UxlKS1mf5o70d',
+            'DMD9': 'https://airtable.com/embed/appeACdHweImPB2eo/shrWdWWSIGFvsaY5B'
+        };
+    
+        let scannedBadgeNumber = ""; // Store the scanned badge number for unknown employees
+    
+        // Utility: Update clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    
+        // Populate station and update iframe
+        const urlParams = new URLSearchParams(window.location.search);
+        const station = urlParams.get('station') || 'DDW7'; // Default to DDW7 if station is missing
+        document.getElementById('station').value = station;
+        const iframe = document.getElementById('attendanceIframe');
+        iframe.src = iframeUrls[station];
+    
+        // Fetch drivers for dropdown
+        function fetchDrivers() {
+            fetch(`/api/drivers?station=${station}`)
+                .then(res => res.json())
+                .then(data => {
+                    const dropdown = document.getElementById('driverDropdown');
+                    dropdown.innerHTML = data.drivers.map(driver => `<option value="${driver}">${driver}</option>`).join('');
+    
+                    // Populate the modal dropdown
+                    const unknownDriverDropdown = document.getElementById('unknownDriverDropdown');
+                    unknownDriverDropdown.innerHTML = data.drivers.map(driver => `<option value="${driver}">${driver}</option>`).join('');
                 });
-                var dropdown2 = document.getElementById('addDriverDropdown');
-                dropdown2.innerHTML = ''; // Clear existing options
-                data.drivers.forEach(driver => {
-                    var option = document.createElement('option');
-                    option.value = driver;
-                    option.textContent = driver;
-                    dropdown2.appendChild(option);
+        }
+        fetchDrivers();
+    
+        // Refresh iframe
+        function refreshIframe() {
+            iframe.src = '';
+            iframe.src = iframeUrls[station];
+        }
+    
+        // Clear other messages
+        function clearOtherMessages(source) {
+            if (source === 'badge') {
+                document.getElementById('driverMessage').textContent = '';
+                document.getElementById('driverMessage').className = 'message';
+            } else if (source === 'driver') {
+                document.getElementById('badgeMessage').textContent = '';
+                document.getElementById('badgeMessage').className = 'message';
+            }
+        }
+    
+        // Handle badge form submission
+        document.getElementById('badgeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            clearOtherMessages('badge'); // Clear driver messages
+            const badgeField = document.getElementById('badgeNumber');
+            scannedBadgeNumber = badgeField.value; // Save the scanned badge number
+            const submissionTime = new Date().toLocaleTimeString();
+    
+            fetch('/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    badgeNumber: scannedBadgeNumber,
+                    EmployeeName: "", // No name for known employees, handled server-side
+                    station,
+                    inputType: 'Scan',
+                    submissionTime
                 })
             })
-            .catch(error => console.error('Error fetching drivers:', error));
-        
-                // Create a wait function
-        
-        const iframeUrls = {
-            'DDW7': 'https://airtable.com/embed/appeACdHweImPB2eo/shr7UxlKS1mf5o70d', // URL for DDW7
-            'DMD9': 'https://airtable.com/embed/appeACdHweImPB2eo/shrWdWWSIGFvsaY5B'  // URL for DMD9
-        };
-        function refreshIframe() {
-            console.log("TRIED REFRESHING IFRAME");
-            var iframe = document.getElementById('iFrame');
-            var src = iframe.src;
-            console.log("IFRAME SRC: " + src);
-            iframe.src = ''; // Temporarily set src to empty
-            iframe.src = src; // Reset to the original src to force a refresh
-        }
-
-        function updateIframe(inputStation) {
-            console.log("UPDATE IFRAME HERE");
-            const station = document.getElementById('stationNew').value;
-            console.log("updateIFrame: " + station)
-            const iframe = document.getElementById('iFrame');
-            iframe.src = iframeUrls[station];
-            refreshIframe(); // Refresh the iframe to load the new content
-        }
-
-        function refreshDropdowns(name){
-            var dropdown = document.getElementById('driverNameDropdown');
-            for (let i = 0; i < dropdown.options.length; i++) {
-                if (dropdown.options[i].value === name) {
-                    dropdown.remove(i); // Remove the option
-                    break;
-                }
-                }
-            var dropdown = document.getElementById('addDriverDropdown');
-            for (let i = 0; i < dropdown.options.length; i++) {
-                if (dropdown.options[i].value === name) {
-                    dropdown.remove(i); // Remove the option
-                    break;
-                }
-            }
-        }
-        function wait(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        // Usage in an async function
-        async function waitOneSecond() {
-            console.log("Start waiting...");
-            
-            // Wait for 1 second
-            await wait(1000);
-            
-            console.log("1 second later...");
-        }
-        let inputTimeout;
-        document.getElementById('dataField').addEventListener('input', async function () {
-            updateClock();
-            clearTimeout(inputTimeout); // Clear previous timeout
-            let timeout = null;
-            event.preventDefault();
-        
-            var dataField = this;
-            var badgeNumber = dataField.value;
-            var time = document.getElementById('clock').textContent;
-            if (timeout) {
-                clearTimeout(timeout);
-            }
-            timeout = setTimeout(() => {
-                if (badgeNumber.length >= 5) {
-                    console.log("BEFORE WAIT");
-                    setTimeout(() => {
-                        console.log('Waited 1 second');
-                    }, 1000); // 1000 milliseconds = 1 second
-        
-                    console.log("AFTER WAIT");
-                    badgeNumber = document.getElementById('dataField').value;
-                    console.log("BADGE NUM FROM TEXT FIELD" + badgeNumber);
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const station = urlParams.get('station');
-                    console.log("STATION FROM URL 1: " + station);
-                    var formData = JSON.stringify({ badgeNumber: badgeNumber, station: station, inputType: "Scan", submissionTime: time });
-                    fetch('/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: formData })
-                    .then(response => {
-                        // Check if the response status is 200 or 202
-                        if (response.status === 200) {
-                            return response.json(); // Parse the response body as JSON
-                        } else if (response.status === 202) {
-                            // Handle the 202 status specifically
-
-                            document.getElementById('form1message').textContent = "EMPLOYEE BADGE NOT FOUND";
-                            document.getElementById('form1message').classList.add('error'); // Add the red/error styling
-                            document.getElementById('form1message').classList.remove('success', 'warning');
-                            document.getElementById('form2message').classList.remove('success', 'warning', 'error');
-                            document.getElementById('form3message').classList.remove('success', 'warning', 'error');
-                            document.getElementById("form2message").textContent = '';
-                            document.getElementById("form3message").textContent = '';
-                            document.getElementById("dataField").value = '';
-
-                            throw new Error("Employee badge not found (202).");
-                        } else {
-                            throw new Error(`Server returned status: ${response.status}`);
-                        }
-                    })
-                    .then(data => {
-                        console.log('Parsed Response Data:', data);
-                        // This block now handles the parsed response data for status 200
-                        dataField.value = ''; // Clear the input field
-                        console.log("Known employee: " + data['employee']);
-                        document.getElementById('form1message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
-                        document.getElementById('form1message').classList.add('success');
-                        document.getElementById('form1message').classList.remove('error', 'warning');
-                        document.getElementById("dataField").value = '';
-                        document.getElementById('form2message').classList.remove('success', 'warning', 'error');
-                        document.getElementById('form3message').classList.remove('success', 'warning', 'error');
-                        document.getElementById("form2message").textContent = '';
-                        document.getElementById("form3message").textContent = '';                        
-                        refreshDropdowns(data['employee']);
+                .then(res => {
+                    if (res.status === 202) {
+                        // UNKNOWN EMPLOYEE
+                        document.getElementById('unknownEmployeeModal').style.display = 'flex';
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.message !== "UNKNOWN EMPLOYEE") {
+                        const message = document.getElementById('badgeMessage');
+                        message.textContent = `${data.employee} checked in at ${submissionTime}`;
+                        message.className = "message success";
                         refreshIframe();
-                    })
-                    .catch(error => {
-                        console.log('Parsed Response Data ERROR:', data);
-                        // Catch block for errors and other statuses
-                        if (error.message !== "Employee badge not found (202).") { // Avoid redundant logging for handled cases
-                            console.error('Error:', error);
-                        }
-                        if (!document.getElementById('form1message').textContent) { // If not already handled
-                            document.getElementById('form1message').textContent = "An error occurred.";
-                            document.getElementById('form1message').classList.add('error');
-                            document.getElementById('form1message').classList.remove('success', 'warning');
-                            document.getElementById("dataField").value = '';
-                            document.getElementById('form2message').classList.remove('success', 'warning', 'error');
-                            document.getElementById('form3message').classList.remove('success', 'warning', 'error');
-                            document.getElementById("form2message").textContent = '';
-                            document.getElementById("form3message").textContent = '';
-                        }
-                        
-                    });
-
-                }
-            }, 1000);
-        
-            
-            function updateClock() {
-                var now = new Date();
-                var hours = String(now.getHours()).padStart(2, '0');
-                var minutes = String(now.getMinutes()).padStart(2, '0');
-                var seconds = String(now.getSeconds()).padStart(2, '0');
-                document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
-            }
-
-            setInterval(updateClock, 1000);
-            updateClock(); // Initial call to display clock immediately
+                    }
+                })
+                .finally(() => {
+                    badgeField.value = '';
+                    badgeField.click();
+                    badgeField.focus();
+                });
         });
-        
-        document.getElementById('driverForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-        
-            // Log form submission triggered
-            console.log("Driver form submission triggered");
-        
-            var dataField = document.getElementById('driverNameDropdown');
-            var driverName = dataField.value;
-            console.log("Driver name selected:", driverName);
-        
-            const urlParams = new URLSearchParams(window.location.search);
-            const station = urlParams.get('station');
-            console.log("Station from URL:", station);
-        
-            var time = document.getElementById('clock').textContent;
-            console.log("Submission time:", time);
-        
-            var formData = JSON.stringify({
-                EmployeeName: driverName,
-                badgeNumber: "99999999",
-                inputType: "Manual input",
-                station: station,
-                submissionTime: time
-            });
-            console.log("Form data being sent:", formData);
-        
+    
+        // Handle driver form submission
+        document.getElementById('driverForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            clearOtherMessages('driver'); // Clear badge messages
+            const selectedDriver = document.getElementById('driverDropdown').value;
+            const submissionTime = new Date().toLocaleTimeString();
+    
             fetch('/scan', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: formData
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    badgeNumber: "99999999", // Placeholder badge number for manual driver entry
+                    EmployeeName: selectedDriver,
+                    station,
+                    inputType: 'Manual input',
+                    submissionTime
+                })
             })
-            .then(response => {
-                console.log("Fetch response status:", response.status);
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Fetch response data:", data);
-        
-                if (data.message == "Success! Record created.") {
-                    console.log("Record created successfully for:", data['employee']);
-        
-                    dataField.value = ''; // Clear the input field
-                    document.getElementById('form2message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
-                    document.getElementById('form2message').classList.remove('error');
-                    document.getElementById('form2message').classList.add('success');
-                    document.getElementById('form1message').classList.remove('success', 'error');
-                    document.getElementById('form3message').classList.remove('success', 'error');
-                    document.getElementById('form1message').textContent = "";
-                    document.getElementById('form3message').textContent = "";
-        
-                    refreshDropdowns(data['employee']);
-                    refreshIframe();
-                } else {
-                    console.log("Error: Could not create record. Message from server:", data.message);
-        
-                    document.getElementById('form2message').textContent = data.message;
-                    document.getElementById('form2message').classList.add('error');
-                    document.getElementById('form2message').classList.remove('success');
-                    document.getElementById('form1message').classList.remove('success', 'error');
-                    document.getElementById('form3message').classList.remove('success', 'error');
-                    document.getElementById('form1message').textContent = "";
-                    document.getElementById('form3message').textContent = "";
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                document.getElementById('form2message').textContent = "An error occurred.";
-                document.getElementById('form2message').classList.add('error');
-                document.getElementById('form2message').classList.remove('success');
-                document.getElementById('form1message').classList.remove('success', 'error');
-                document.getElementById('form3message').classList.remove('success', 'error');
-                document.getElementById('form1message').textContent = "";
-                document.getElementById('form3message').textContent = "";
-            });
+                .then(res => res.json())
+                .then(data => {
+                    const message = document.getElementById('driverMessage');
+                    if (data.message === "Success! Record created.") {
+                        message.textContent = `${selectedDriver} checked in at ${submissionTime}`;
+                        message.className = "message success";
+                        refreshIframe();
+                        fetchDrivers(); // Refresh dropdown after driver submission
+                    } else {
+                        message.textContent = data.message;
+                        message.className = "message error";
+                    }
+                });
         });
-        
-        
-
-        document.getElementById('bottomSubmitButton').addEventListener('click', function(event) {
-            event.preventDefault();
-            var dataField = document.getElementById('addDriverDropdown');
-            var badge_Number = document.getElementById("newDriverDataField").value
-            var newDriverName = dataField.value;
-            const urlParams = new URLSearchParams(window.location.search);
-            const station = urlParams.get('station');
-            var time = document.getElementById('clock').textContent
-            var formData = JSON.stringify({ EmployeeName: newDriverName, badgeNumber: badge_Number, inputType: "Scan", station: station, submissionTime: time});
+    
+        // Modal Handling
+        document.getElementById('confirmUnknownDriver').addEventListener('click', () => {
+            const selectedDriver = document.getElementById('unknownDriverDropdown').value;
+            const submissionTime = new Date().toLocaleTimeString();
+    
             fetch('/scan', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: formData
-            }).then(response => response.json())
-              .then(data => {
-                    if (data.message == "Success! Record created.") {
-                        dataField.value = ''; // Clear the input field
-                        document.getElementById('form3message').textContent = data['employee'] + " successfully checked in at " + document.getElementById('clock').textContent;
-                        document.getElementById('form3message').classList.remove('error');
-                        document.getElementById('form3message').classList.add('success');
-                        document.getElementById('form1message').classList.remove('success');
-                        document.getElementById('form2message').classList.remove('success');
-
-                        document.getElementById('form1message').textContent = "";
-                        document.getElementById('form2message').textContent = "";
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const station = urlParams.get('station');
-                        console.log("STATION LOCATION 3: " + station);
-                        refreshDropdowns(data['employee'])
-                        refreshIframe()
-                        document.getElementById('newDriverDataField').value = "";
-
-                  } else {
-                      document.getElementById('form3message').textContent = data.message;
-                      document.getElementById('form3message').classList.add('error');
-                      document.getElementById('form3message').classList.remove('success');
-                      document.getElementById('form1message').textContent = "";
-                      document.getElementById('form2message').textContent = "";
-
-                      
-                  }
-              }).catch(error => {
-                  console.error('Error:', error);
-                  document.getElementById('form3message').textContent = "An error occurred.";
-                  document.getElementById('form3message').classList.add('error');
-                  document.getElementById('form3message').classList.remove('success');
-                  document.getElementById('form1message').textContent = "";
-                  document.getElementById('form2message').textContent = "";
-
-                  
-              });
-              
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    badgeNumber: scannedBadgeNumber, // Use the scanned badge number
+                    EmployeeName: selectedDriver,
+                    station,
+                    inputType: 'Manual input',
+                    submissionTime
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    const message = document.getElementById('badgeMessage');
+                    if (data.message === "Success! Record created.") {
+                        message.textContent = `${selectedDriver} checked in at ${submissionTime}`;
+                        message.className = "message success";
+                        refreshIframe();
+                        fetchDrivers(); // Refresh dropdown after modal submission
+                    } else {
+                        message.textContent = data.message;
+                        message.className = "message error";
+                    }
+                })
+                .finally(() => {
+                    document.getElementById('unknownEmployeeModal').style.display = 'none';
+                });
         });
-    </script> 
+    
+        document.getElementById('cancelModal').addEventListener('click', () => {
+            document.getElementById('unknownEmployeeModal').style.display = 'none';
+            fetchDrivers(); // Refresh dropdowns when modal is canceled
+        });
+    </script>
+    
 </body>
 </html>
-
-
